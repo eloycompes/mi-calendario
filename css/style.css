@@ -459,3 +459,27 @@ h1,h2,h3,p{margin-top:0}h1{font:800 32px Manrope,sans-serif;letter-spacing:-1.4p
   font-size: 12px;
 }
 .note-modal-card textarea:focus { border-color: #8eadeb; box-shadow: 0 0 0 3px #477fe51a; }
+
+
+.bulk-personal {
+  background: var(--violet-soft);
+  color: #7959ba;
+}
+.agenda-note {
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid #eee8fa;
+  border-radius: 9px;
+  background: #fbf9ff;
+}
+.agenda-note-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.agenda-note-heading strong {
+  color: #7959ba;
+  font: 700 11px Manrope, sans-serif;
+}
+.agenda-note .detail-notes { margin-bottom: 0; }
