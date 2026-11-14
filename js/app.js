@@ -110,6 +110,11 @@ function finishCalendarDrag() {
   if (dragMoved) {
     suppressCalendarClick = true;
     updateBulkToolbar();
+
+    // Repintar todas las casillas: elimina el resaltado individual anterior
+    // y deja visibles únicamente los días incluidos en el arrastre.
+    renderCalendar();
+
     setTimeout(() => {
       suppressCalendarClick = false;
     }, 0);
