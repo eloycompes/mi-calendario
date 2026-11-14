@@ -90,7 +90,7 @@ function startCalendarDrag(e) {
     if (window.matchMedia("(max-width: 720px)").matches) return;
 
     // Controles de navegación y acciones mantienen la selección para trabajar en varios meses.
-    if (e.target.closest("#calendar, #bulk-toolbar, .calendar-actions, #prev-month, #next-month, #add-event-side, #add-note-button, #note-modal, #event-modal")) return;
+    if (e.target.closest("#calendar, #bulk-toolbar, .calendar-actions, #prev-month, #next-month, #add-event-side, #add-note-button, #note-modal, #event-modal, [data-note-edit], [data-note-delete]")) return;
 
     // Un clic fuera del calendario elimina la selección acumulada.
     {
@@ -167,8 +167,8 @@ document.addEventListener("pointercancel", cancelCalendarDrag);
 document.addEventListener("click", (e) => {
   if (window.matchMedia("(max-width: 720px)").matches) {
     // El desplazamiento no genera un clic, pero un toque fuera sí limpia la selección.
-    if (e.target.closest("#calendar, #bulk-toolbar, .calendar-actions, #prev-month, #next-month, #add-event-side, #add-note-button, #note-modal, #event-modal")) return;
-  } else if (e.target.closest("#calendar, #bulk-toolbar, .calendar-actions, #prev-month, #next-month, #add-event-side, #add-note-button, #note-modal, #event-modal")) {
+    if (e.target.closest("#calendar, #bulk-toolbar, .calendar-actions, #prev-month, #next-month, #add-event-side, #add-note-button, #note-modal, #event-modal, [data-note-edit], [data-note-delete]")) return;
+  } else if (e.target.closest("#calendar, #bulk-toolbar, .calendar-actions, #prev-month, #next-month, #add-event-side, #add-note-button, #note-modal, #event-modal, [data-note-edit], [data-note-delete]")) {
     return;
   }
 
@@ -441,6 +441,14 @@ function createDayCell(date, key, showOtherMonth = true, mini = false) {
     top.append(star);
   }
   cell.append(top);
+
+  if (!mini && events.some(event => event.event_date === key && event.notes?.trim())) {
+    const noteIndicator = document.createElement("span");
+    noteIndicator.className = "note-indicator";
+    noteIndicator.title = "Este día tiene una nota";
+    noteIndicator.setAttribute("aria-label", "Este día tiene una nota");
+    cell.append(noteIndicator);
+  }
 
   if (mini) {
     // Un día representa una única jornada: coloreamos toda la casilla.
