@@ -82,27 +82,7 @@ function addDraggedDate(date) {
 
 function startCalendarDrag(e) {
   const cell = e.target.closest("#calendar .day-cell");
-
-  if (cell && !multiSelectMode) return;
-
-  if (!cell || e.button !== 0) {
-    // Los gestos de desplazamiento móvil no deben borrar la selección.
-    if (window.matchMedia("(max-width: 720px)").matches) return;
-
-    // Controles de navegación y acciones mantienen la selección para trabajar en varios meses.
-    if (e.target.closest("#calendar, #bulk-toolbar, .calendar-actions, #prev-month, #next-month, #add-event-side, #add-note-button, #note-modal, #event-modal, [data-note-edit], [data-note-delete]")) return;
-
-    // Un clic fuera del calendario elimina la selección acumulada.
-    {
-      selectedDates.clear();
-      selectedDate = null;
-      bulkSelectionActive = false;
-      updateBulkToolbar();
-      renderCalendar();
-      renderDayDetails();
-    }
-    return;
-  }
+  if (!cell || e.button !== 0 || !multiSelectMode) return;
 
   dragActive = true;
   dragMoved = false;
@@ -161,27 +141,6 @@ document.addEventListener("pointerdown", startCalendarDrag);
 document.addEventListener("pointermove", moveCalendarDrag);
 document.addEventListener("pointerup", finishCalendarDrag);
 document.addEventListener("pointercancel", cancelCalendarDrag);
-
-// Cualquier clic fuera de una casilla del calendario limpia TODA la selección.
-// Se ejecuta en captura para que no dependa de los manejadores de cada componente.
-document.addEventListener("click", (e) => {
-  if (window.matchMedia("(max-width: 720px)").matches) {
-    // El desplazamiento no genera un clic, pero un toque fuera sí limpia la selección.
-    if (e.target.closest("#calendar, #bulk-toolbar, .calendar-actions, #prev-month, #next-month, #add-event-side, #add-note-button, #note-modal, #event-modal, [data-note-edit], [data-note-delete]")) return;
-  } else if (e.target.closest("#calendar, #bulk-toolbar, .calendar-actions, #prev-month, #next-month, #add-event-side, #add-note-button, #note-modal, #event-modal, [data-note-edit], [data-note-delete]")) {
-    return;
-  }
-
-  const hadSelection = selectedDate !== null || selectedDates.size > 0;
-  if (!hadSelection) return;
-
-  selectedDate = null;
-  selectedDates.clear();
-  bulkSelectionActive = false;
-  updateBulkToolbar();
-  renderCalendar();
-  renderDayDetails();
-}, true);
 
 // Evitar que el navegador seleccione texto al arrastrar.
 document.addEventListener("selectstart", (e) => {
@@ -422,7 +381,7 @@ function createDayCell(date, key, showOtherMonth = true, mini = false) {
     cell.classList.add("other-month");
   }
   if (key === dateKey(new Date())) cell.classList.add("today");
-  if (key === selectedDate && selectedDates.size === 0) cell.classList.add("selected");
+  if (key === selectedDate && selectedDates.size === 0 && !multiSelectMode) cell.classList.add("selected");
   if (selectedDates.has(key)) cell.classList.add("multi-selected");
 
   const dayEvents = events.filter(e => e.event_date === key && !isStandaloneNote(e));
@@ -479,9 +438,13 @@ function createDayCell(date, key, showOtherMonth = true, mini = false) {
     }
 
     selectedDate = key;
-    if (!multiSelectMode) selectedDates.clear();
-    selectedDates.add(key);
-    bulkSelectionActive = true;
+    if (multiSelectMode && selectedDates.has(key)) {
+      selectedDates.delete(key);
+    } else {
+      if (!multiSelectMode) selectedDates.clear();
+      selectedDates.add(key);
+    }
+    bulkSelectionActive = selectedDates.size > 0;
     weekCursor = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     cursor = new Date(date.getFullYear(), date.getMonth(), 1);
     render();
@@ -1256,8 +1219,12 @@ $("multi-select-toggle").addEventListener("click", () => {
   multiSelectMode = !multiSelectMode;
 
   if (!multiSelectMode && selectedDates.size > 1) {
+    const retainedDate = selectedDates.has(selectedDate)
+      ? selectedDate
+      : [...selectedDates].at(-1);
     selectedDates.clear();
-    if (selectedDate) selectedDates.add(selectedDate);
+    if (retainedDate) selectedDates.add(retainedDate);
+    selectedDate = retainedDate || null;
   }
 
   updateBulkToolbar();
