@@ -331,3 +331,17 @@ h1,h2,h3,p{margin-top:0}h1{font:800 32px Manrope,sans-serif;letter-spacing:-1.4p
   #app-view.year-view .mini-day { min-height: 14px; }
   #app-view.year-view .practice-summary { margin-top: 6px; }
 }
+
+
+/* Navegación semanal estable aunque se cierre la selección del día. */
+@media (max-width: 720px) {
+  .calendar-toolbar { flex-wrap: wrap; }
+  .calendar-actions { flex: 0 0 auto; }
+  .calendar-actions select {
+    width: auto;
+    min-width: 96px;
+    max-width: none;
+    flex: 0 0 auto;
+    padding: 7px 24px 7px 9px;
+  }
+}
