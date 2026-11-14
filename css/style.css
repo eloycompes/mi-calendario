@@ -376,3 +376,18 @@ h1,h2,h3,p{margin-top:0}h1{font:800 32px Manrope,sans-serif;letter-spacing:-1.4p
   #bulk-toolbar > span { flex: 0 0 100%; }
   #bulk-toolbar button { flex: 1 1 auto; }
 }
+
+
+/* Mantener navegación y modo de selección accesibles al recorrer el calendario. */
+.calendar-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  padding: 8px 0;
+  background: #fff;
+}
+#multi-select-toggle.active {
+  background: #eaf1ff;
+  color: #3975d7;
+  border-color: #b9cdf5;
+}
