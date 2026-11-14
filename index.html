@@ -68,25 +68,6 @@
         </div>
       </section>
 
-      <section class="stats-grid">
-        <article class="stat-card stat-practice">
-          <div class="stat-head"><span>Prácticas realizadas</span><span class="stat-icon">✳</span></div>
-          <div class="stat-number"><strong id="practice-hours">0</strong><small> / 500 h</small></div>
-          <div class="progress-track"><div id="practice-progress" class="progress-fill"></div></div>
-          <div class="stat-foot"><span id="practice-percent">0% completado</span><span id="practice-remaining">500 h restantes</span></div><div class="finish-estimate"><span>◷</span><span><b>Finalización estimada</b><strong id="finish-date">Calculando…</strong></span><small id="finish-detail">A 6 h por día laborable</small></div>
-        </article>
-        <article class="stat-card stat-work">
-          <div class="stat-head"><span>Horas de trabajo</span><span class="stat-icon">↗</span></div>
-          <div class="stat-number"><strong id="work-hours">0</strong><small> horas registradas</small></div>
-          <div class="stat-foot standalone"><span>Acumulado en el calendario</span></div>
-        </article>
-        <article class="stat-card stat-days">
-          <div class="stat-head"><span>Jornadas registradas</span><span class="stat-icon">▦</span></div>
-          <div class="stat-number"><strong id="total-days">0</strong><small> días</small></div>
-          <div class="stat-foot standalone"><span id="personal-days">0 días personales o libres</span></div>
-        </article>
-      </section>
-
       <section class="workspace">
         <div class="calendar-panel">
           <div class="calendar-toolbar">
@@ -103,6 +84,7 @@
               <select id="view-select" aria-label="Vista del calendario">
                 <option value="month">Mes</option>
                 <option value="week">Semana</option>
+                <option value="year">Año</option>
               </select>
             </div>
           </div>
@@ -121,6 +103,12 @@
             <span><i class="legend-dot special"></i> Día destacado</span>
           </div>
           <div id="calendar" class="calendar-grid" aria-label="Calendario"></div>
+          <article class="stat-card stat-practice practice-summary">
+            <div class="stat-head"><span>Prácticas realizadas</span><span class="stat-icon">✳</span></div>
+            <div class="stat-number"><strong id="practice-hours">0</strong><small> / 500 h</small></div>
+            <div class="progress-track"><div id="practice-progress" class="progress-fill"></div></div>
+            <div class="stat-foot"><span id="practice-percent">0% completado</span><span id="practice-remaining">500 h restantes</span></div>
+          </article>
         </div>
 
         <aside class="side-panel">
