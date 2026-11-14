@@ -157,7 +157,7 @@ document.addEventListener("click", (e) => {
   if (window.matchMedia("(max-width: 720px)").matches) {
     // El desplazamiento no genera un clic, pero un toque fuera sí limpia la selección.
     if (e.target.closest("#calendar, #bulk-toolbar, .calendar-actions, #prev-month, #next-month, #add-event-side, #add-note-button, #note-modal, #event-modal")) return;
-  } else if (e.target.closest("#calendar, #bulk-toolbar, .calendar-actions, #prev-month, #next-month, #add-event-side, #add-note-button")) {
+  } else if (e.target.closest("#calendar, #bulk-toolbar, .calendar-actions, #prev-month, #next-month, #add-event-side, #add-note-button, #note-modal, #event-modal")) {
     return;
   }
 
@@ -628,6 +628,7 @@ function openNoteModal() {
     || events.find(event => event.event_date === selectedDate);
 
   $("note-event-id").value = dayEvent?.id || "";
+  $("note-date-value").value = selectedDate;
   $("note-date-label").textContent = prettyDate(selectedDate, {
     weekday: "long", day: "numeric", month: "long", year: "numeric"
   });
@@ -646,11 +647,12 @@ async function saveNote(e) {
   $("note-error").textContent = "";
 
   const notes = $("note-text").value.trim();
+  const noteDate = $("note-date-value").value;
   if (!notes) {
     $("note-error").textContent = "Escribe una nota antes de guardarla.";
     return;
   }
-  if (!selectedDate) {
+  if (!noteDate) {
     $("note-error").textContent = "Selecciona un día para guardar esta nota.";
     return;
   }
@@ -660,7 +662,7 @@ async function saveNote(e) {
     ? await supabase.from("calendar_events").update({ notes }).eq("id", eventId).eq("user_id", user.id).select().single()
     : await supabase.from("calendar_events").insert({
         user_id: user.id,
-        event_date: selectedDate,
+        event_date: noteDate,
         type: "personal",
         title: "Nota del día",
         start_time: null,
@@ -675,6 +677,7 @@ async function saveNote(e) {
     return;
   }
 
+  selectedDate = noteDate;
   closeNoteModal();
   await loadEvents();
   render();
