@@ -1,54 +1,52 @@
-# Mi calendario — guía de publicación
+# Mi calendario — versión 2.0
 
-Esta aplicación está construida con HTML, CSS y JavaScript. GitHub Pages publica la interfaz y Supabase guarda los datos de forma privada en la nube.
+Aplicación web responsive con HTML, CSS y JavaScript. GitHub Pages aloja la interfaz y Supabase guarda los datos de cada usuario.
 
-## 1. Crear el proyecto de Supabase
+## Novedades de la versión 2.0
 
-1. Entra en https://supabase.com/ y crea una cuenta (puedes usar el plan gratuito).
-2. Crea un proyecto nuevo. Ponle un nombre, crea una contraseña segura para la base de datos y elige una región europea.
-3. Cuando el proyecto esté creado, abre **Project Settings → API** (en algunas versiones aparece como **API Keys**).
-4. Copia la **Project URL** y la clave pública **anon / publishable**. Nunca uses la `service_role` o `secret key` en una web.
+- Previsión de fecha de finalización de las 500 horas, calculada con 6 horas por día laborable (lunes a viernes).
+- La previsión excluye fines de semana y fechas que ya tengan otra actividad o libranza registrada. Las prácticas futuras ya registradas se cuentan en el total y no se duplican en la previsión.
+- Accesos directos separados para añadir Prácticas, Trabajo y Libranza.
+- Las prácticas nuevas proponen 6 horas por defecto; puedes cambiarlas en cada jornada.
+- Libranzas manuales con motivo opcional. No suman horas.
+- Selección múltiple de fechas y aplicación en bloque de prácticas, trabajo o libranza.
+- Acción para seleccionar todos los días laborables del mes visible.
+- Si una fecha seleccionada ya tiene un registro, se conserva sin sobrescribir y se informa antes de aplicar el lote.
 
-## 2. Crear la tabla
+## Actualizar desde la versión 1.x ya publicada
 
-1. En el panel de Supabase abre **SQL Editor**.
-2. Pulsa **New query**.
-3. Abre el archivo `supabase-schema.sql` de esta carpeta, copia todo su contenido y pégalo en el editor.
-4. Pulsa **Run**. Esto crea la tabla y las reglas para que cada usuario solo pueda consultar y modificar sus propios registros.
+**No borres el proyecto de Supabase ni la tabla existente.** Esta actualización conserva los registros actuales.
 
-## 3. Conectar la aplicación
+### 1. Actualizar la base de datos para admitir libranzas
 
-Abre `js/config.js` y sustituye los dos textos de ejemplo:
+1. Abre Supabase → SQL Editor → New query.
+2. Ponle el nombre `02 - Habilitar libranzas v2`.
+3. Abre `02-actualizar-tipos-v2.sql`, copia el contenido y ejecútalo.
+4. Debe aparecer `Success. No rows returned`.
 
-- `PEGA_AQUI_TU_PROJECT_URL` por la Project URL.
-- `PEGA_AQUI_TU_PUBLISHABLE_O_ANON_KEY` por la clave pública anon/publishable.
+Este paso amplía la restricción de tipos de la tabla para aceptar `leave` (libranza). No elimina ni modifica las jornadas existentes.
 
-No pongas nunca una clave `service_role` ni una clave `secret` en este archivo. La clave pública es apta para el navegador porque la seguridad real la aplican las políticas RLS creadas en el SQL.
+### 2. Sustituir los archivos de GitHub
 
-## 4. Publicar en GitHub Pages
+1. Descomprime `mi-calendario-v2.zip` en tu ordenador.
+2. Abre el repositorio GitHub `mi-calendario` y entra en la raíz.
+3. Para cada archivo existente (`index.html`, `LEEME.md`, `css/style.css`, `js/app.js`, `js/config.js` y `supabase-schema.sql`), abre el archivo, pulsa el lápiz de edición y reemplaza su contenido por el del archivo nuevo correspondiente; guarda con **Commit changes**. También puedes eliminar los archivos antiguos y subir el contenido nuevo completo, manteniendo `index.html` en la raíz.
+4. Sube además `02-actualizar-tipos-v2.sql` como documentación del proyecto.
+5. No cambies `js/config.js`: ya contiene la URL y la publishable key de tu proyecto Supabase.
 
-1. Entra en https://github.com/ e inicia sesión o crea una cuenta.
-2. Pulsa **New repository**.
-3. Pon como nombre `mi-calendario` y selecciona **Public**. No hace falta añadir README, licencia ni `.gitignore`.
-4. En el repositorio, pulsa **Add file → Upload files**.
-5. Descomprime `mi-calendario.zip` en tu ordenador y arrastra el CONTENIDO de la carpeta (index.html, css, js, supabase-schema.sql y LEEME.md) a GitHub. El archivo `index.html` debe quedar en la raíz del repositorio.
-6. Pulsa **Commit changes**.
-7. Ve a **Settings → Pages**.
-8. En **Build and deployment**, selecciona **Deploy from a branch**. Elige `main` y `/ (root)` y pulsa **Save**.
-9. Espera unos minutos. GitHub mostrará la dirección pública de tu aplicación, con formato `https://TU-USUARIO.github.io/mi-calendario/`.
+GitHub Pages volverá a publicar automáticamente los cambios. La base de datos y las jornadas permanecen en Supabase.
 
-## 5. Primer acceso
+## Uso de las novedades
 
-1. Abre la dirección de GitHub Pages.
-2. Selecciona **Crear cuenta**, introduce tu correo y una contraseña.
-3. Si Supabase pide confirmación por correo, abre el mensaje y confirma la cuenta. Después inicia sesión.
-4. Abre la misma dirección en el móvil e inicia sesión con la misma cuenta. Los registros se sincronizan a través de Supabase.
+- **Prácticas:** añade una jornada con 6 horas propuestas por defecto. Puedes cambiar horas y horario.
+- **Trabajo:** registra la jornada y sus horas.
+- **Libranza:** registra un día libre manualmente, con un motivo opcional (festivo, vacaciones, asuntos propios, etc.). No se carga ningún calendario de festivos automáticamente.
+- **Selección múltiple:** activa el modo, pulsa las fechas y elige qué tipo aplicar. `Laborables del mes` selecciona de lunes a viernes del mes que estás viendo. Las fechas que ya tengan registros se dejan intactas; no se sobrescriben.
+- **Previsión de fin:** es una estimación orientativa basada en 500 horas objetivo, 6 horas por laborable y las fechas ya ocupadas que estén registradas. Los días futuros sin registro se consideran días de prácticas previstos; si sabes que libras o trabajas, márcalo para ajustar la estimación.
 
-## Notas importantes
+## Copias de seguridad y privacidad
 
-- La web necesita conexión a Internet para iniciar sesión y sincronizar los datos.
-- Los datos se guardan en Supabase; GitHub Pages solo aloja los archivos de la aplicación.
-- El botón **Exportar copia de seguridad** descarga tus registros en formato JSON.
-- Para instalarla en el móvil, abre la web en el navegador y usa la opción **Añadir a pantalla de inicio**.
-- Si cambias el código, vuelve a subir los archivos modificados a GitHub. Los datos de Supabase no se borran al actualizar la web.
-- El proyecto no contiene claves privadas. La clave anon/publishable del navegador no es un secreto; las políticas RLS limitan el acceso a los datos de cada cuenta.
+- El botón **Exportar copia de seguridad** descarga los registros visibles de tu cuenta en JSON.
+- La aplicación utiliza la publishable key en el navegador. Nunca pongas una `service_role` ni una `secret` key en `js/config.js`.
+- Las políticas RLS de Supabase restringen los registros a la cuenta propietaria.
+- No ejecutes de nuevo el SQL inicial de creación de tabla para esta actualización. Solo ejecuta la migración `02-actualizar-tipos-v2.sql` una vez.
