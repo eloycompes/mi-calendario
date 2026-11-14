@@ -252,3 +252,21 @@ h1,h2,h3,p{margin-top:0}h1{font:800 32px Manrope,sans-serif;letter-spacing:-1.4p
   .side-calendar-nav.prev { left: -19px; }
   .side-calendar-nav.next { right: -19px; }
 }
+
+
+/* Corrección específica de vista anual: hoy solo lleva reborde, nunca círculo en el número. */
+.year-grid .mini-day.today:not(.selected) .day-number {
+  background: transparent !important;
+  color: inherit !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.year-grid .mini-day.today:not(.selected) {
+  outline: 2px solid #477fe5 !important;
+  outline-offset: -2px;
+}
+.year-grid .mini-day.selected .day-number {
+  background: #477fe5 !important;
+  color: #fff !important;
+  border-radius: 50% !important;
+}
