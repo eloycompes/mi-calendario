@@ -77,10 +77,7 @@
             </div>
             <div class="calendar-actions">
               <button id="selection-toggle" class="subtle-button">Selección múltiple</button><button id="today-button" class="subtle-button">Hoy</button>
-              <div class="month-nav">
-                <button id="prev-month" aria-label="Mes anterior">‹</button>
-                <button id="next-month" aria-label="Mes siguiente">›</button>
-              </div>
+
               <select id="view-select" aria-label="Vista del calendario">
                 <option value="month">Mes</option>
                 <option value="week">Semana</option>
@@ -102,7 +99,11 @@
             <span><i class="legend-dot personal"></i> Personal</span><span><i class="legend-dot leave"></i> Libranza</span>
             <span><i class="legend-dot special"></i> Día destacado</span>
           </div>
-          <div id="calendar" class="calendar-grid" aria-label="Calendario"></div>
+          <div class="calendar-stage">
+            <button id="prev-month" class="side-calendar-nav prev" aria-label="Periodo anterior">‹</button>
+            <div id="calendar" class="calendar-grid" aria-label="Calendario"></div>
+            <button id="next-month" class="side-calendar-nav next" aria-label="Periodo siguiente">›</button>
+          </div>
           <article class="stat-card stat-practice practice-summary">
             <div class="stat-head"><span>Prácticas realizadas</span><span class="stat-icon">✳</span></div>
             <div class="stat-number"><strong id="practice-hours">0</strong><small> / 500 h</small></div>
