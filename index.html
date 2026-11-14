@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20261114-topperiodnav1">
+  <link rel="stylesheet" href="css/style.css?v=20261114-daynotes1">
 </head>
 <body>
   <div class="app-shell">
@@ -114,14 +114,37 @@
               <p>Selecciona una fecha del calendario para consultar o añadir una jornada, notas y recordatorios.</p>
             </div>
           </div>
-          <div class="quick-note">
+          <div class="quick-note note-action">
             <div class="quick-note-icon">✎</div>
-            <div><strong>Un pequeño consejo</strong><p>Puedes añadir una nota a cualquier día, incluso si no tienes ninguna jornada programada.</p></div>
+            <div>
+              <strong>Nota para este día</strong>
+              <p>Guarda aquí un recordatorio para la fecha seleccionada.</p>
+              <button id="add-note-button" class="note-add-button" type="button">＋ Añadir nota</button>
+            </div>
           </div>
         </aside>
       </section>
       <footer class="app-footer"><span>Hecho para organizar mejor tu tiempo.</span><button id="export-button" class="text-button">Exportar copia de seguridad ↓</button></footer>
     </main>
+  </div>
+
+  <div id="note-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="note-modal-title">
+    <form id="note-form" class="modal-card note-modal-card">
+      <div class="modal-header">
+        <div><div class="eyebrow">AGENDA</div><h2 id="note-modal-title">Añadir nota</h2></div>
+        <button type="button" id="close-note-modal" class="close-button" aria-label="Cerrar">×</button>
+      </div>
+      <input id="note-event-id" type="hidden">
+      <div class="note-date"><span>Fecha</span><strong id="note-date-label"></strong></div>
+      <label class="note-label" for="note-text">Nota</label>
+      <textarea id="note-text" rows="5" maxlength="2000" placeholder="Escribe aquí lo que quieras recordar…" required></textarea>
+      <p id="note-error" class="form-message" aria-live="polite"></p>
+      <div class="modal-actions">
+        <span class="action-spacer"></span>
+        <button type="button" id="cancel-note-modal" class="subtle-button">Cancelar</button>
+        <button type="submit" class="primary-button">Guardar nota</button>
+      </div>
+    </form>
   </div>
 
   <div id="event-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
@@ -154,6 +177,6 @@
   </div>
   <div id="toast" class="toast" role="status"></div>
 
-  <script type="module" src="js/app.js?v=20261114-topperiodnav1"></script>
+  <script type="module" src="js/app.js?v=20261114-daynotes1"></script>
 </body>
 </html>
