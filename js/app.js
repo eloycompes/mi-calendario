@@ -73,8 +73,10 @@ function startCalendarDrag(e) {
     // Fuera de las casillas se limpia la selección, excepto al usar acciones en bloque.
     if (!e.target.closest("#bulk-toolbar")) {
       selectedDates.clear();
+      selectedDate = null;
       updateBulkToolbar();
       renderCalendar();
+      renderDayDetails();
     }
     return;
   }
@@ -495,12 +497,23 @@ function renderYearCalendar(root) {
 // --------------------------------------------------
 
 function renderDayDetails() {
+  const root = $("day-details");
+  root.innerHTML = "";
+
+  if (!selectedDate) {
+    $("selected-date-title").textContent = "Selecciona un día";
+    root.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-illustration">✳</div>
+        <strong>Tu día, a tu manera</strong>
+        <p>Selecciona una fecha del calendario para consultar o añadir una jornada, notas y recordatorios.</p>
+      </div>
+    `;
+    return;
+  }
+
   $("selected-date-title").textContent =
     prettyDate(selectedDate, { weekday: "short", day: "numeric", month: "long" });
-
-  const root = $("day-details");
-
-  root.innerHTML = "";
 
   const dayEvents = events.filter(e => e.event_date === selectedDate);
 
@@ -735,7 +748,7 @@ async function deleteEvent(id) {
 // --------------------------------------------------
 
 function updateBulkToolbar() {
-  $("bulk-toolbar").classList.toggle("hidden", selectedDates.size === 0);
+  $("bulk-toolbar").classList.toggle("is-empty", selectedDates.size === 0);
   $("selected-count").textContent = selectedDates.size;
 }
 
