@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20261114-selection-mode1">
+  <link rel="stylesheet" href="css/style.css?v=20261114-topperiodnav1">
 </head>
 <body>
   <div class="app-shell">
@@ -63,6 +63,10 @@
               <span id="month-count" class="month-count"></span>
             </div>
             <div class="calendar-actions">
+              <div class="period-nav" aria-label="Navegación del periodo">
+                <button id="prev-month" class="subtle-button" aria-label="Periodo anterior" title="Periodo anterior">‹</button>
+                <button id="next-month" class="subtle-button" aria-label="Periodo siguiente" title="Periodo siguiente">›</button>
+              </div>
               <button id="today-button" class="subtle-button">Hoy</button>
               <button id="multi-select-toggle" class="subtle-button" type="button" aria-pressed="false">Selección múltiple</button>
 
@@ -88,9 +92,7 @@
             <span><i class="legend-dot special"></i> Día destacado</span>
           </div>
           <div class="calendar-stage">
-            <button id="prev-month" class="side-calendar-nav prev" aria-label="Periodo anterior">‹</button>
             <div id="calendar" class="calendar-grid" aria-label="Calendario"></div>
-            <button id="next-month" class="side-calendar-nav next" aria-label="Periodo siguiente">›</button>
           </div>
           <article class="stat-card stat-practice practice-summary">
             <div class="stat-head"><span>Prácticas realizadas</span><span class="stat-icon">✳</span></div>
@@ -152,6 +154,6 @@
   </div>
   <div id="toast" class="toast" role="status"></div>
 
-  <script type="module" src="js/app.js?v=20261114-selection-mode1"></script>
+  <script type="module" src="js/app.js?v=20261114-topperiodnav1"></script>
 </body>
 </html>
