@@ -79,7 +79,7 @@ function startCalendarDrag(e) {
     if (window.matchMedia("(max-width: 720px)").matches) return;
 
     // Controles de navegación y acciones mantienen la selección para trabajar en varios meses.
-    if (e.target.closest("#calendar, #bulk-toolbar, .calendar-actions, #prev-month, #next-month, #add-event-side, #add-note-button")) return;
+    if (e.target.closest("#calendar, #bulk-toolbar, .calendar-actions, #prev-month, #next-month, #add-event-side, #add-note-button, #note-modal, #event-modal")) return;
 
     // Un clic fuera del calendario elimina la selección acumulada.
     {
@@ -156,7 +156,7 @@ document.addEventListener("pointercancel", cancelCalendarDrag);
 document.addEventListener("click", (e) => {
   if (window.matchMedia("(max-width: 720px)").matches) {
     // El desplazamiento no genera un clic, pero un toque fuera sí limpia la selección.
-    if (e.target.closest("#calendar, #bulk-toolbar, .calendar-actions, #prev-month, #next-month")) return;
+    if (e.target.closest("#calendar, #bulk-toolbar, .calendar-actions, #prev-month, #next-month, #add-event-side, #add-note-button, #note-modal, #event-modal")) return;
   } else if (e.target.closest("#calendar, #bulk-toolbar, .calendar-actions, #prev-month, #next-month, #add-event-side, #add-note-button")) {
     return;
   }
