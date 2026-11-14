@@ -79,7 +79,7 @@ function startCalendarDrag(e) {
     if (window.matchMedia("(max-width: 720px)").matches) return;
 
     // Controles de navegación y acciones mantienen la selección para trabajar en varios meses.
-    if (e.target.closest("#calendar, #bulk-toolbar, .calendar-actions, #prev-month, #next-month")) return;
+    if (e.target.closest("#calendar, #bulk-toolbar, .calendar-actions, #prev-month, #next-month, #add-event-side, #add-note-button")) return;
 
     // Un clic fuera del calendario elimina la selección acumulada.
     {
@@ -157,7 +157,7 @@ document.addEventListener("click", (e) => {
   if (window.matchMedia("(max-width: 720px)").matches) {
     // El desplazamiento no genera un clic, pero un toque fuera sí limpia la selección.
     if (e.target.closest("#calendar, #bulk-toolbar, .calendar-actions, #prev-month, #next-month")) return;
-  } else if (e.target.closest("#calendar, #bulk-toolbar, .calendar-actions, #prev-month, #next-month")) {
+  } else if (e.target.closest("#calendar, #bulk-toolbar, .calendar-actions, #prev-month, #next-month, #add-event-side, #add-note-button")) {
     return;
   }
 
@@ -618,6 +618,69 @@ function render() {
   renderDayDetails();
 }
 
+function openNoteModal() {
+  if (!selectedDate) {
+    showToast("Selecciona un día para añadir una nota");
+    return;
+  }
+
+  const dayEvent = events.find(event => event.event_date === selectedDate && event.notes)
+    || events.find(event => event.event_date === selectedDate);
+
+  $("note-event-id").value = dayEvent?.id || "";
+  $("note-date-label").textContent = prettyDate(selectedDate, {
+    weekday: "long", day: "numeric", month: "long", year: "numeric"
+  });
+  $("note-text").value = dayEvent?.notes || "";
+  $("note-error").textContent = "";
+  $("note-modal").classList.remove("hidden");
+  $("note-text").focus();
+}
+
+function closeNoteModal() {
+  $("note-modal").classList.add("hidden");
+}
+
+async function saveNote(e) {
+  e.preventDefault();
+  $("note-error").textContent = "";
+
+  const notes = $("note-text").value.trim();
+  if (!notes) {
+    $("note-error").textContent = "Escribe una nota antes de guardarla.";
+    return;
+  }
+  if (!selectedDate) {
+    $("note-error").textContent = "Selecciona un día para guardar esta nota.";
+    return;
+  }
+
+  const eventId = $("note-event-id").value;
+  const result = eventId
+    ? await supabase.from("calendar_events").update({ notes }).eq("id", eventId).eq("user_id", user.id).select().single()
+    : await supabase.from("calendar_events").insert({
+        user_id: user.id,
+        event_date: selectedDate,
+        type: "personal",
+        title: "Nota del día",
+        start_time: null,
+        end_time: null,
+        hours: null,
+        highlighted: false,
+        notes
+      }).select().single();
+
+  if (result.error) {
+    $("note-error").textContent = result.error.message;
+    return;
+  }
+
+  closeNoteModal();
+  await loadEvents();
+  render();
+  showToast("Nota guardada");
+}
+
 // --------------------------------------------------
 // MODAL Y REGISTRO DE JORNADAS
 // --------------------------------------------------
@@ -993,6 +1056,13 @@ document.querySelectorAll("[data-auth-tab]").forEach(b => {
 
 
 $("add-event-side").addEventListener("click", () => openModal());
+$("add-note-button").addEventListener("click", openNoteModal);
+$("close-note-modal").addEventListener("click", closeNoteModal);
+$("cancel-note-modal").addEventListener("click", closeNoteModal);
+$("note-form").addEventListener("submit", saveNote);
+$("note-modal").addEventListener("click", e => {
+  if (e.target === $("note-modal")) closeNoteModal();
+});
 
 $("close-modal").addEventListener("click", closeModal);
 $("cancel-modal").addEventListener("click", closeModal);
