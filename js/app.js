@@ -337,6 +337,7 @@ function renderStats() {
 
 function renderCalendar() {
   const root = $("calendar");
+  $("app-view").classList.toggle("year-view", viewMode === "year");
   root.innerHTML = "";
   root.classList.remove("week-grid", "year-grid");
   root.style.userSelect = "none";
