@@ -71,7 +71,10 @@ function startCalendarDrag(e) {
   const cell = e.target.closest("#calendar .day-cell");
 
   if (!cell || e.button !== 0) {
-    // Fuera de las casillas se limpia la selección, excepto al usar acciones en bloque.
+    // Los controles dentro del calendario deben conservarse para poder completar su clic.
+    if (e.target.closest("#calendar")) return;
+
+    // Fuera del calendario se limpia la selección, excepto al usar acciones en bloque.
     if (!e.target.closest("#bulk-toolbar")) {
       selectedDates.clear();
       selectedDate = null;
@@ -144,7 +147,7 @@ document.addEventListener("pointercancel", cancelCalendarDrag);
 // Cualquier clic fuera de una casilla del calendario limpia TODA la selección.
 // Se ejecuta en captura para que no dependa de los manejadores de cada componente.
 document.addEventListener("click", (e) => {
-  if (e.target.closest("#calendar .day-cell")) return;
+  if (e.target.closest("#calendar")) return;
   if (e.target.closest("#bulk-toolbar")) return;
 
   const hadSelection = selectedDate !== null || selectedDates.size > 0;
