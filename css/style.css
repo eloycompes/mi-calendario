@@ -295,3 +295,39 @@ h1,h2,h3,p{margin-top:0}h1{font:800 32px Manrope,sans-serif;letter-spacing:-1.4p
   min-height: 54px;
   margin: 0 0 12px;
 }
+
+
+/* Ajuste compacto de la vista anual para escritorio */
+#bulk-toolbar {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+.workspace { margin-top: 8px; }
+.calendar-panel { padding: 12px 16px 10px; }
+.calendar-toolbar { margin-bottom: 9px; }
+.bulk-toolbar { min-height: 0; padding: 7px 8px; margin-bottom: 8px; }
+.legend { gap: 12px; margin-bottom: 8px; }
+.year-grid { gap: 8px; }
+.mini-month { padding: 6px 8px; }
+.mini-month-title { padding-bottom: 4px; font-size: 11px; }
+.mini-weekdays { gap: 1px; margin-bottom: 1px; }
+.mini-weekdays span { padding: 1px 0; font-size: 7px; }
+.mini-days { gap: 1px; }
+.mini-day { min-height: 15px; font-size: 8px; }
+.mini-day .day-number { width: 15px; height: 15px; font-size: 8px; }
+.practice-summary { margin-top: 8px; padding: 9px 13px; }
+.practice-summary .stat-head { font-size: 10px; }
+.practice-summary .stat-number { margin: 3px 0 6px; }
+.practice-summary .stat-number strong { font-size: 20px; }
+.practice-summary .stat-foot { margin-top: 4px; }
+@media (min-width: 1060px) and (max-height: 900px) {
+  #app-view.year-view .calendar-panel { padding-top: 9px; padding-bottom: 8px; }
+  #app-view.year-view .calendar-toolbar { margin-bottom: 6px; }
+  #app-view.year-view .bulk-toolbar { padding-top: 5px; padding-bottom: 5px; margin-bottom: 6px; }
+  #app-view.year-view .legend { margin-bottom: 5px; }
+  #app-view.year-view .mini-month { padding-top: 4px; padding-bottom: 4px; }
+  #app-view.year-view .mini-day { min-height: 14px; }
+  #app-view.year-view .practice-summary { margin-top: 6px; }
+}
