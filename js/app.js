@@ -460,6 +460,7 @@ function renderYearCalendar(root) {
   for (let month = 0; month < 12; month++) {
     const card = document.createElement("section");
     card.className = "mini-month";
+    card.dataset.yearMonth = `${year}-${String(month + 1).padStart(2, "0")}`;
 
     const heading = document.createElement("button");
     heading.type = "button";
@@ -991,15 +992,6 @@ $("delete-event").addEventListener("click", () => {
   deleteEvent($("event-id").value);
 });
 
-$("clear-selection").addEventListener("click", () => {
-  selectedDates.clear();
-  selectedDate = null;
-
-  updateBulkToolbar();
-  renderCalendar();
-  renderDayDetails();
-});
-
 $("delete-selected-days").addEventListener("click", deleteSelectedDays);
 
 $("select-weekdays").addEventListener("click", () => {
@@ -1066,6 +1058,11 @@ $("today-button").addEventListener("click", () => {
   weekCursor = new Date(now);
 
   render();
+  if (viewMode === "year" && window.matchMedia("(max-width: 720px)").matches) {
+    const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    document.querySelector(`#calendar .mini-month[data-year-month="${monthKey}"]`)
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
 });
 
 $("view-select").addEventListener("change", e => {
