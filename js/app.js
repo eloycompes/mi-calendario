@@ -16,7 +16,7 @@ let events = [];
 let selectedDate = dateKey(new Date());
 let cursor = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
-let viewMode = "month";
+let viewMode = "year";
 let authMode = "login";
 let toastTimer;
 const selectedDates = new Set();
@@ -140,6 +140,22 @@ document.addEventListener("pointermove", moveCalendarDrag);
 document.addEventListener("pointerup", finishCalendarDrag);
 document.addEventListener("pointercancel", cancelCalendarDrag);
 
+// Cualquier clic fuera de una casilla del calendario limpia TODA la selección.
+// Se ejecuta en captura para que no dependa de los manejadores de cada componente.
+document.addEventListener("click", (e) => {
+  if (e.target.closest("#calendar .day-cell")) return;
+  if (e.target.closest("#bulk-toolbar")) return;
+
+  const hadSelection = selectedDate !== null || selectedDates.size > 0;
+  if (!hadSelection) return;
+
+  selectedDate = null;
+  selectedDates.clear();
+  updateBulkToolbar();
+  renderCalendar();
+  renderDayDetails();
+}, true);
+
 // Evitar que el navegador seleccione texto al arrastrar.
 document.addEventListener("selectstart", (e) => {
   if (dragActive || dragMoved) {
@@ -217,6 +233,8 @@ function showApp() {
   $("app-view").classList.remove("hidden");
 
   $("account-email").textContent = user?.email || "";
+  $("view-select").value = "year";
+  viewMode = "year";
 
   $("today-label").textContent = prettyDate(
     dateKey(new Date()),
@@ -345,7 +363,7 @@ function renderCalendar() {
     start = new Date(first);
     start.setDate(first.getDate() - (first.getDay() + 6) % 7);
   } else {
-    const selected = parseDate(selectedDate);
+    const selected = parseDate(selectedDate || dateKey(new Date()));
     start = new Date(selected);
     start.setDate(selected.getDate() - (selected.getDay() + 6) % 7);
   }
@@ -1004,7 +1022,11 @@ $("today-button").addEventListener("click", () => {
 
 $("view-select").addEventListener("change", e => {
   viewMode = e.target.value;
-  if (viewMode === "year") cursor = new Date(cursor.getFullYear(), 0, 1);
+  if (viewMode === "year") {
+    cursor = new Date(cursor.getFullYear(), 0, 1);
+  } else if (viewMode === "week" && !selectedDate) {
+    selectedDate = dateKey(new Date());
+  }
   renderCalendar();
 });
 
