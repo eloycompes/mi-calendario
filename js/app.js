@@ -283,73 +283,16 @@ function eventHours(e) {
   return 0;
 }
 
-// --------------------------------------------------
-// PREVISIÓN DE FINALIZACIÓN
-// --------------------------------------------------
 
-function estimateFinishDate(practiceTotal) {
-  let remaining = Math.max(0, PRACTICE_TARGET - practiceTotal);
-
-  if (remaining <= 0) {
-    return { date: null, detail: "Objetivo completado" };
-  }
-
-  const byDate = new Map();
-
-  events.forEach(e => {
-    if (!byDate.has(e.event_date)) {
-      byDate.set(e.event_date, []);
-    }
-
-    byDate.get(e.event_date).push(e);
-  });
-
-  const cursorDate = new Date();
-  cursorDate.setHours(0, 0, 0, 0);
-  cursorDate.setDate(cursorDate.getDate() + 1);
-
-  let days = 0;
-  let guard = 0;
-
-  while (remaining > 0 && guard < 2500) {
-    const key = dateKey(cursorDate);
-    const dow = cursorDate.getDay();
-    const dayEvents = byDate.get(key) || [];
-
-    if (dow !== 0 && dow !== 6 && dayEvents.length === 0) {
-      remaining -= DEFAULT_PRACTICE_HOURS;
-      days++;
-    }
-
-    cursorDate.setDate(cursorDate.getDate() + 1);
-    guard++;
-  }
-
-  cursorDate.setDate(cursorDate.getDate() - 1);
-
-  return {
-    date: dateKey(cursorDate),
-    detail: `Previsión con ${DEFAULT_PRACTICE_HOURS} h por laborable · ${days} días estimados`
-  };
-}
 
 // --------------------------------------------------
-// ESTADÍSTICAS
+// CONTADOR DE PRÁCTICAS
 // --------------------------------------------------
 
 function renderStats() {
   const practice = events
     .filter(e => e.type === "practice")
-    .reduce((s, e) => s + eventHours(e), 0);
-
-  const work = events
-    .filter(e => e.type === "work")
-    .reduce((s, e) => s + eventHours(e), 0);
-
-  const days = new Set(events.map(e => e.event_date));
-
-  const personal = events.filter(e => e.type === "personal").length;
-  const leaves = events.filter(e => e.type === "leave").length;
+    .reduce((total, e) => total + eventHours(e), 0);
 
   const pct = Math.min(100, practice / PRACTICE_TARGET * 100);
 
@@ -362,163 +305,50 @@ function renderStats() {
   $("practice-remaining").textContent =
     Math.max(0, PRACTICE_TARGET - practice)
       .toLocaleString("es-ES", { maximumFractionDigits: 2 }) + " h restantes";
-
-  $("work-hours").textContent =
-    work.toLocaleString("es-ES", { maximumFractionDigits: 2 });
-
-  $("total-days").textContent = days.size;
-
-  $("personal-days").textContent =
-    `${personal} personales · ${leaves} libranzas`;
-
-  const estimate = estimateFinishDate(practice);
-
-  $("finish-date").textContent = estimate.date
-    ? prettyDate(estimate.date, { day: "numeric", month: "long", year: "numeric" })
-    : "¡Objetivo completado!";
-
-  $("finish-detail").textContent = estimate.detail;
 }
 
 // --------------------------------------------------
-// CALENDARIO
+// CALENDARIO MENSUAL, SEMANAL Y ANUAL
 // --------------------------------------------------
 
 function renderCalendar() {
   const root = $("calendar");
-
   root.innerHTML = "";
-
-  // Evita la selección de texto durante el arrastre.
+  root.classList.remove("week-grid", "year-grid");
   root.style.userSelect = "none";
   root.style.webkitUserSelect = "none";
   root.style.touchAction = "none";
 
+  if (viewMode === "year") {
+    renderYearCalendar(root);
+    return;
+  }
+
   root.classList.toggle("week-grid", viewMode === "week");
 
-  weekdayNames.forEach(d => {
+  weekdayNames.forEach(day => {
     const el = document.createElement("div");
-
     el.className = "weekday";
-    el.textContent = d;
-
+    el.textContent = day;
     root.append(el);
   });
 
   let start;
-
   if (viewMode === "month") {
     const first = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
-
     start = new Date(first);
     start.setDate(first.getDate() - (first.getDay() + 6) % 7);
   } else {
     const selected = parseDate(selectedDate);
-
     start = new Date(selected);
     start.setDate(selected.getDate() - (selected.getDay() + 6) % 7);
   }
 
   const count = viewMode === "month" ? 42 : 7;
-
   for (let i = 0; i < count; i++) {
     const d = new Date(start);
-
     d.setDate(start.getDate() + i);
-
-    const key = dateKey(d);
-
-    const cell = document.createElement("div");
-
-    cell.className = "day-cell";
-    cell.dataset.date = key;
-
-    if (d.getMonth() !== cursor.getMonth() && viewMode === "month") {
-      cell.classList.add("other-month");
-    }
-
-    if (key === dateKey(new Date())) {
-      cell.classList.add("today");
-    }
-
-    if (key === selectedDate) {
-      cell.classList.add("selected");
-    }
-
-    if (selectionMode && selectedDates.has(key)) {
-      cell.classList.add("multi-selected");
-    }
-
-    const dayEvents = events.filter(e => e.event_date === key);
-
-    const top = document.createElement("div");
-    top.className = "day-top";
-
-    const num = document.createElement("span");
-    num.className = "day-number";
-    num.textContent = d.getDate();
-
-    top.append(num);
-
-    if (dayEvents.some(e => e.highlighted)) {
-      const star = document.createElement("span");
-
-      star.className = "day-highlight";
-      star.textContent = "★";
-
-      top.append(star);
-    }
-
-    cell.append(top);
-
-    dayEvents.slice(0, 2).forEach(e => {
-      const pill = document.createElement("span");
-
-      pill.className = `event-pill ${e.type}`;
-      pill.textContent = e.title || typeNames[e.type];
-
-      cell.append(pill);
-    });
-
-    if (dayEvents.length > 2) {
-      const more = document.createElement("span");
-
-      more.className = "event-pill more";
-      more.textContent = `+${dayEvents.length - 2} más`;
-
-      cell.append(more);
-    }
-
-    // El clic normal sigue funcionando.
-    // Si acabamos de arrastrar, se ignora el clic generado por el navegador.
-    cell.addEventListener("click", () => {
-      if (suppressCalendarClick) {
-        suppressCalendarClick = false;
-        return;
-      }
-
-      if (selectionMode) {
-        if (selectedDates.has(key)) {
-          selectedDates.delete(key);
-        } else {
-          selectedDates.add(key);
-        }
-
-        renderCalendar();
-        updateBulkToolbar();
-        return;
-      }
-
-      selectedDate = key;
-
-      if (viewMode === "week") {
-        cursor = new Date(d.getFullYear(), d.getMonth(), 1);
-      }
-
-      render();
-    });
-
-    root.append(cell);
+    root.append(createDayCell(d, dateKey(d), viewMode === "month"));
   }
 
   $("month-title").textContent =
@@ -526,8 +356,147 @@ function renderCalendar() {
       ? `${monthNames[cursor.getMonth()]} ${cursor.getFullYear()}`
       : `Semana del ${prettyDate(dateKey(start), { day: "numeric", month: "short" })}`;
 
+  const monthKey = dateKey(cursor).slice(0, 7);
   $("month-count").textContent =
-    `${events.filter(e => e.event_date.slice(0, 7) === dateKey(cursor).slice(0, 7)).length} registros este mes`;
+    `${events.filter(e => e.event_date.startsWith(monthKey)).length} registros este mes`;
+}
+
+function createDayCell(date, key, showOtherMonth = true, mini = false) {
+  const cell = document.createElement("div");
+  cell.className = mini ? "mini-day day-cell" : "day-cell";
+  cell.dataset.date = key;
+
+  if (showOtherMonth && date.getMonth() !== cursor.getMonth()) {
+    cell.classList.add("other-month");
+  }
+  if (key === dateKey(new Date())) cell.classList.add("today");
+  if (key === selectedDate) cell.classList.add("selected");
+  if (selectedDates.has(key)) cell.classList.add("multi-selected");
+
+  const dayEvents = events.filter(e => e.event_date === key);
+  const top = document.createElement("div");
+  top.className = "day-top";
+
+  const num = document.createElement("span");
+  num.className = "day-number";
+  num.textContent = date.getDate();
+  top.append(num);
+
+  if (dayEvents.some(e => e.highlighted)) {
+    const star = document.createElement("span");
+    star.className = "day-highlight";
+    star.textContent = "★";
+    top.append(star);
+  }
+  cell.append(top);
+
+  if (mini) {
+    if (dayEvents.length) {
+      const marks = document.createElement("span");
+      marks.className = "mini-event-marks";
+      [...new Set(dayEvents.map(e => e.type))].forEach(type => {
+        const mark = document.createElement("i");
+        mark.className = type;
+        marks.append(mark);
+      });
+      cell.append(marks);
+    }
+  } else {
+    dayEvents.slice(0, 2).forEach(e => {
+      const pill = document.createElement("span");
+      pill.className = `event-pill ${e.type}`;
+      pill.textContent = e.title || typeNames[e.type];
+      cell.append(pill);
+    });
+
+    if (dayEvents.length > 2) {
+      const more = document.createElement("span");
+      more.className = "event-pill more";
+      more.textContent = `+${dayEvents.length - 2} más`;
+      cell.append(more);
+    }
+  }
+
+  cell.addEventListener("click", () => {
+    if (suppressCalendarClick) {
+      suppressCalendarClick = false;
+      return;
+    }
+
+    if (selectionMode) {
+      if (selectedDates.has(key)) selectedDates.delete(key);
+      else selectedDates.add(key);
+      renderCalendar();
+      updateBulkToolbar();
+      return;
+    }
+
+    selectedDate = key;
+    cursor = new Date(date.getFullYear(), date.getMonth(), 1);
+    render();
+  });
+
+  return cell;
+}
+
+function renderYearCalendar(root) {
+  root.classList.add("year-grid");
+  const year = cursor.getFullYear();
+
+  for (let month = 0; month < 12; month++) {
+    const card = document.createElement("section");
+    card.className = "mini-month";
+
+    const heading = document.createElement("button");
+    heading.type = "button";
+    heading.className = "mini-month-title";
+    heading.textContent = monthNames[month];
+    heading.addEventListener("click", () => {
+      cursor = new Date(year, month, 1);
+      selectedDate = dateKey(new Date(year, month, 1));
+      viewMode = "month";
+      $("view-select").value = "month";
+      render();
+    });
+    card.append(heading);
+
+    const weekdays = document.createElement("div");
+    weekdays.className = "mini-weekdays";
+    weekdayNames.forEach(day => {
+      const label = document.createElement("span");
+      label.textContent = day;
+      weekdays.append(label);
+    });
+    card.append(weekdays);
+
+    const days = document.createElement("div");
+    days.className = "mini-days";
+
+    const first = new Date(year, month, 1);
+    const offset = (first.getDay() + 6) % 7;
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    const totalCells = Math.ceil((offset + totalDays) / 7) * 7;
+
+    for (let i = 0; i < totalCells; i++) {
+      const dayNumber = i - offset + 1;
+
+      if (dayNumber < 1 || dayNumber > totalDays) {
+        const blank = document.createElement("span");
+        blank.className = "mini-day blank";
+        days.append(blank);
+      } else {
+        const date = new Date(year, month, dayNumber);
+        days.append(createDayCell(date, dateKey(date), false, true));
+      }
+    }
+
+    card.append(days);
+    root.append(card);
+  }
+
+  $("month-title").textContent = String(year);
+  const count = events.filter(e => e.event_date.startsWith(String(year))).length;
+  $("month-count").textContent = `${count} registros este año`;
 }
 
 // --------------------------------------------------
@@ -1013,40 +982,34 @@ document.querySelectorAll("[data-bulk-type]").forEach(b => {
 });
 
 $("prev-month").addEventListener("click", () => {
-  const d = viewMode === "month"
-    ? new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1)
-    : parseDate(selectedDate);
-
-  if (viewMode === "week") {
+  if (viewMode === "year") {
+    cursor = new Date(cursor.getFullYear() - 1, 0, 1);
+  } else if (viewMode === "month") {
+    cursor = new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1);
+  } else {
+    const d = parseDate(selectedDate);
     d.setDate(d.getDate() - 7);
-  }
-
-  cursor = new Date(d.getFullYear(), d.getMonth(), 1);
-
-  if (viewMode === "week") {
     selectedDate = dateKey(d);
+    cursor = new Date(d.getFullYear(), d.getMonth(), 1);
   }
-
   render();
 });
 
 $("next-month").addEventListener("click", () => {
-  const d = viewMode === "month"
-    ? new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1)
-    : parseDate(selectedDate);
-
-  if (viewMode === "week") {
+  if (viewMode === "year") {
+    cursor = new Date(cursor.getFullYear() + 1, 0, 1);
+  } else if (viewMode === "month") {
+    cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+  } else {
+    const d = parseDate(selectedDate);
     d.setDate(d.getDate() + 7);
-  }
-
-  cursor = new Date(d.getFullYear(), d.getMonth(), 1);
-
-  if (viewMode === "week") {
     selectedDate = dateKey(d);
+    cursor = new Date(d.getFullYear(), d.getMonth(), 1);
   }
-
   render();
 });
+
+
 
 $("today-button").addEventListener("click", () => {
   const now = new Date();
@@ -1059,6 +1022,7 @@ $("today-button").addEventListener("click", () => {
 
 $("view-select").addEventListener("change", e => {
   viewMode = e.target.value;
+  if (viewMode === "year") cursor = new Date(cursor.getFullYear(), 0, 1);
   renderCalendar();
 });
 
