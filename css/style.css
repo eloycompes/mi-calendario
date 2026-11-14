@@ -177,3 +177,66 @@ h1,h2,h3,p{margin-top:0}h1{font:800 32px Manrope,sans-serif;letter-spacing:-1.4p
 @media(max-width:420px) {
   .year-grid { grid-template-columns: 1fr; }
 }
+
+
+/* Navegación lateral del calendario */
+.calendar-stage {
+  position: relative;
+  margin: 0 24px;
+}
+.side-calendar-nav {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #e2e5ec;
+  border-radius: 9px;
+  background: #f5f6f8;
+  color: #858b98;
+  font: 400 28px/1 "DM Sans", sans-serif;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.side-calendar-nav:hover {
+  background: #e9ecf1;
+  color: #50596a;
+  border-color: #d3d8e1;
+}
+.side-calendar-nav.prev { left: -25px; }
+.side-calendar-nav.next { right: -25px; }
+
+/* Vista anual: el fondo completo de cada casilla identifica la jornada */
+.mini-day.event-practice { background: #dce8ff; color: #285fbd; }
+.mini-day.event-work { background: #ffeadf; color: #a94f2c; }
+.mini-day.event-personal { background: #eee5fb; color: #7049ad; }
+.mini-day.event-leave { background: #dff2e9; color: #247653; }
+.mini-day.event-practice .day-number,
+.mini-day.event-work .day-number,
+.mini-day.event-personal .day-number,
+.mini-day.event-leave .day-number {
+  color: inherit;
+  font-weight: 700;
+}
+.mini-day.event-practice.today,
+.mini-day.event-work.today,
+.mini-day.event-personal.today,
+.mini-day.event-leave.today {
+  box-shadow: inset 0 0 0 2px #477fe5;
+}
+.mini-day.event-practice.selected,
+.mini-day.event-work.selected,
+.mini-day.event-personal.selected,
+.mini-day.event-leave.selected {
+  outline: 2px solid #477fe5;
+  outline-offset: -2px;
+}
+@media(max-width:720px) {
+  .calendar-stage { margin: 0 17px; }
+  .side-calendar-nav { width: 24px; height: 40px; font-size: 23px; }
+  .side-calendar-nav.prev { left: -19px; }
+  .side-calendar-nav.next { right: -19px; }
+}
