@@ -472,6 +472,7 @@ function renderYearCalendar(root) {
       viewMode = "month";
       $("view-select").value = "month";
       render();
+      scrollViewportToTopOnMobile();
     });
     card.append(heading);
 
@@ -623,6 +624,12 @@ function render() {
   renderStats();
   renderCalendar();
   renderDayDetails();
+}
+
+function scrollViewportToTopOnMobile() {
+  if (window.matchMedia("(max-width: 720px)").matches) {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 }
 
 function openNoteModal() {
@@ -1243,6 +1250,7 @@ $("view-select").addEventListener("change", e => {
     }
   }
   renderCalendar();
+  if (viewMode === "month") scrollViewportToTopOnMobile();
 });
 
 $("export-button").addEventListener("click", exportBackup);
