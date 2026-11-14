@@ -619,17 +619,20 @@ function render() {
 }
 
 function openNoteModal() {
-  if (!selectedDate) {
-    showToast("Selecciona un día para añadir una nota");
+  const noteDate = selectedDate || (selectedDates.size === 1 ? [...selectedDates][0] : null);
+  if (!noteDate) {
+    showToast(selectedDates.size > 1
+      ? "Selecciona un solo día para añadir una nota"
+      : "Selecciona un día para añadir una nota");
     return;
   }
 
-  const dayEvent = events.find(event => event.event_date === selectedDate && event.notes)
-    || events.find(event => event.event_date === selectedDate);
+  const dayEvent = events.find(event => event.event_date === noteDate && event.notes)
+    || events.find(event => event.event_date === noteDate);
 
   $("note-event-id").value = dayEvent?.id || "";
-  $("note-date-value").value = selectedDate;
-  $("note-date-label").textContent = prettyDate(selectedDate, {
+  $("note-date-value").value = noteDate;
+  $("note-date-label").textContent = prettyDate(noteDate, {
     weekday: "long", day: "numeric", month: "long", year: "numeric"
   });
   $("note-text").value = dayEvent?.notes || "";
