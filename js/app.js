@@ -391,15 +391,10 @@ function createDayCell(date, key, showOtherMonth = true, mini = false) {
   cell.append(top);
 
   if (mini) {
+    // Un día representa una única jornada: coloreamos toda la casilla.
     if (dayEvents.length) {
-      const marks = document.createElement("span");
-      marks.className = "mini-event-marks";
-      [...new Set(dayEvents.map(e => e.type))].forEach(type => {
-        const mark = document.createElement("i");
-        mark.className = type;
-        marks.append(mark);
-      });
-      cell.append(marks);
+      cell.classList.add(`event-${dayEvents[0].type}`);
+      cell.title = dayEvents[0].title || typeNames[dayEvents[0].type];
     }
   } else {
     dayEvents.slice(0, 2).forEach(e => {
