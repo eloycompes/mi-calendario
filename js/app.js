@@ -72,14 +72,14 @@ function startCalendarDrag(e) {
   const cell = e.target.closest("#calendar .day-cell");
 
   if (!cell || e.button !== 0) {
-    // En móvil se conserva la selección mientras se desplaza hasta la barra fija.
+    // Los gestos de desplazamiento móvil no deben borrar la selección.
     if (window.matchMedia("(max-width: 720px)").matches) return;
 
-    // Los controles dentro del calendario deben conservarse para poder completar su clic.
-    if (e.target.closest("#calendar")) return;
+    // Controles de navegación y acciones mantienen la selección para trabajar en varios meses.
+    if (e.target.closest("#calendar, #bulk-toolbar, .calendar-actions, #prev-month, #next-month")) return;
 
-    // Fuera del calendario se limpia la selección, excepto al usar acciones en bloque.
-    if (!e.target.closest("#bulk-toolbar")) {
+    // Un clic fuera del calendario elimina la selección acumulada.
+    {
       selectedDates.clear();
       selectedDate = null;
       bulkSelectionActive = false;
@@ -106,7 +106,6 @@ function moveCalendarDrag(e) {
 
   if (!dragMoved) {
     dragMoved = true;
-    selectedDates.clear();
     addDraggedDate(dragStartDate);
   }
 
@@ -131,8 +130,7 @@ function finishCalendarDrag() {
       suppressCalendarClick = false;
     }, 0);
   } else {
-    // Un clic simple no deja una selección múltiple anterior.
-    selectedDates.clear();
+    // El clic simple añadirá la fecha sin borrar las ya seleccionadas.
     updateBulkToolbar();
   }
 
@@ -153,9 +151,12 @@ document.addEventListener("pointercancel", cancelCalendarDrag);
 // Cualquier clic fuera de una casilla del calendario limpia TODA la selección.
 // Se ejecuta en captura para que no dependa de los manejadores de cada componente.
 document.addEventListener("click", (e) => {
-  if (window.matchMedia("(max-width: 720px)").matches) return;
-  if (e.target.closest("#calendar")) return;
-  if (e.target.closest("#bulk-toolbar")) return;
+  if (window.matchMedia("(max-width: 720px)").matches) {
+    // El desplazamiento no genera un clic, pero un toque fuera sí limpia la selección.
+    if (e.target.closest("#calendar, #bulk-toolbar, .calendar-actions, #prev-month, #next-month")) return;
+  } else if (e.target.closest("#calendar, #bulk-toolbar, .calendar-actions, #prev-month, #next-month")) {
+    return;
+  }
 
   const hadSelection = selectedDate !== null || selectedDates.size > 0;
   if (!hadSelection) return;
@@ -456,6 +457,7 @@ function createDayCell(date, key, showOtherMonth = true, mini = false) {
     }
 
     selectedDate = key;
+    selectedDates.add(key);
     bulkSelectionActive = true;
     weekCursor = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     cursor = new Date(date.getFullYear(), date.getMonth(), 1);
@@ -809,9 +811,7 @@ async function deleteSelectedDays() {
     return;
   }
 
-  selectedDates.clear();
-  selectedDate = null;
-  bulkSelectionActive = false;
+  selectedDate = dates[0];
   updateBulkToolbar();
   await loadEvents();
   render();
@@ -880,8 +880,6 @@ async function applyBulk(type) {
   }
 
   selectedDate = fresh[0];
-  selectedDates.clear();
-  bulkSelectionActive = false;
 
   updateBulkToolbar();
 
@@ -1069,6 +1067,7 @@ $("today-button").addEventListener("click", () => {
 
   cursor = new Date(now.getFullYear(), now.getMonth(), 1);
   selectedDate = dateKey(now);
+  selectedDates.add(selectedDate);
   weekCursor = new Date(now);
   bulkSelectionActive = true;
 
