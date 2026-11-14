@@ -483,3 +483,19 @@ h1,h2,h3,p{margin-top:0}h1{font:800 32px Manrope,sans-serif;letter-spacing:-1.4p
   font: 700 11px Manrope, sans-serif;
 }
 .agenda-note .detail-notes { margin-bottom: 0; }
+
+
+.note-action {
+  justify-content: center;
+  align-items: center;
+}
+.note-action .note-add-button { width: 100%; }
+.note-indicator {
+  display: block;
+  width: 6px;
+  height: 6px;
+  margin: 2px 0 1px 9px;
+  border-radius: 50%;
+  background: #8564c8;
+  box-shadow: 0 0 0 2px #f1ecfb;
+}
