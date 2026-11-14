@@ -14,6 +14,7 @@ let supabase = null;
 let user = null;
 let events = [];
 let selectedDate = dateKey(new Date());
+let bulkSelectionActive = false;
 let cursor = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 let weekCursor = new Date();
 
@@ -71,6 +72,9 @@ function startCalendarDrag(e) {
   const cell = e.target.closest("#calendar .day-cell");
 
   if (!cell || e.button !== 0) {
+    // En móvil se conserva la selección mientras se desplaza hasta la barra fija.
+    if (window.matchMedia("(max-width: 720px)").matches) return;
+
     // Los controles dentro del calendario deben conservarse para poder completar su clic.
     if (e.target.closest("#calendar")) return;
 
@@ -78,6 +82,7 @@ function startCalendarDrag(e) {
     if (!e.target.closest("#bulk-toolbar")) {
       selectedDates.clear();
       selectedDate = null;
+      bulkSelectionActive = false;
       updateBulkToolbar();
       renderCalendar();
       renderDayDetails();
@@ -115,6 +120,7 @@ function finishCalendarDrag() {
 
   if (dragMoved) {
     suppressCalendarClick = true;
+    bulkSelectionActive = true;
     updateBulkToolbar();
 
     // Repintar todas las casillas: elimina el resaltado individual anterior
@@ -147,6 +153,7 @@ document.addEventListener("pointercancel", cancelCalendarDrag);
 // Cualquier clic fuera de una casilla del calendario limpia TODA la selección.
 // Se ejecuta en captura para que no dependa de los manejadores de cada componente.
 document.addEventListener("click", (e) => {
+  if (window.matchMedia("(max-width: 720px)").matches) return;
   if (e.target.closest("#calendar")) return;
   if (e.target.closest("#bulk-toolbar")) return;
 
@@ -155,6 +162,7 @@ document.addEventListener("click", (e) => {
 
   selectedDate = null;
   selectedDates.clear();
+  bulkSelectionActive = false;
   updateBulkToolbar();
   renderCalendar();
   renderDayDetails();
@@ -346,7 +354,7 @@ function renderCalendar() {
   root.classList.remove("week-grid", "year-grid");
   root.style.userSelect = "none";
   root.style.webkitUserSelect = "none";
-  root.style.touchAction = "none";
+  root.style.touchAction = window.matchMedia("(max-width: 720px)").matches ? "pan-y" : "none";
 
   if (viewMode === "year") {
     renderYearCalendar(root);
@@ -448,6 +456,7 @@ function createDayCell(date, key, showOtherMonth = true, mini = false) {
     }
 
     selectedDate = key;
+    bulkSelectionActive = true;
     weekCursor = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     cursor = new Date(date.getFullYear(), date.getMonth(), 1);
     render();
@@ -802,6 +811,7 @@ async function deleteSelectedDays() {
 
   selectedDates.clear();
   selectedDate = null;
+  bulkSelectionActive = false;
   updateBulkToolbar();
   await loadEvents();
   render();
@@ -815,6 +825,7 @@ async function deleteSelectedDays() {
 function updateBulkToolbar() {
   const count = selectedDates.size || (selectedDate ? 1 : 0);
   $("selected-count").textContent = count;
+  $("app-view").classList.toggle("mobile-actions-active", bulkSelectionActive);
 }
 
 async function applyBulk(type) {
@@ -869,8 +880,8 @@ async function applyBulk(type) {
   }
 
   selectedDate = fresh[0];
-
   selectedDates.clear();
+  bulkSelectionActive = false;
 
   updateBulkToolbar();
 
@@ -1059,6 +1070,7 @@ $("today-button").addEventListener("click", () => {
   cursor = new Date(now.getFullYear(), now.getMonth(), 1);
   selectedDate = dateKey(now);
   weekCursor = new Date(now);
+  bulkSelectionActive = true;
 
   render();
   if (viewMode === "year" && window.matchMedia("(max-width: 720px)").matches) {
