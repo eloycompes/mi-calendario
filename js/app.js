@@ -6,9 +6,11 @@ const configured = SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes
   SUPABASE_ANON_KEY.length > 20 && !SUPABASE_ANON_KEY.includes("PEGA_AQUI");
 let supabase = null, user = null, events = [], selectedDate = dateKey(new Date());
 let cursor = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-let viewMode = "month", authMode = "login", toastTimer;
+let viewMode = "month", authMode = "login", toastTimer, selectionMode = false;
+const selectedDates = new Set();
+const PRACTICE_TARGET = 500, DEFAULT_PRACTICE_HOURS = 6;
 
-const typeNames = { practice: "Prácticas", work: "Trabajo", personal: "Personal" };
+const typeNames = { practice: "Prácticas", work: "Trabajo", personal: "Personal", leave: "Libranza" };
 const monthNames = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 const weekdayNames = ["L","M","X","J","V","S","D"];
 
@@ -61,19 +63,45 @@ function eventHours(e) {
   }
   return 0;
 }
+function estimateFinishDate(practiceTotal) {
+  let remaining = Math.max(0, PRACTICE_TARGET - practiceTotal);
+  if (remaining <= 0) return { date: null, detail: "Objetivo completado" };
+  const byDate = new Map();
+  events.forEach(e => { if (!byDate.has(e.event_date)) byDate.set(e.event_date, []); byDate.get(e.event_date).push(e); });
+  const cursorDate = new Date(); cursorDate.setHours(0,0,0,0);
+  // Las horas de todas las jornadas de prácticas ya están incluidas en practiceTotal.
+  // Para la previsión futura, solo contamos laborables libres; los días ya ocupados
+  // por trabajo, libranza o una jornada de prácticas planificada no se duplican.
+  cursorDate.setDate(cursorDate.getDate()+1);
+  let days = 0, guard = 0;
+  while (remaining > 0 && guard < 2500) {
+    const key = dateKey(cursorDate), dow = cursorDate.getDay(), dayEvents = byDate.get(key) || [];
+    if (dow !== 0 && dow !== 6 && dayEvents.length === 0) {
+      remaining -= DEFAULT_PRACTICE_HOURS;
+      days++;
+    }
+    cursorDate.setDate(cursorDate.getDate()+1); guard++;
+  }
+  cursorDate.setDate(cursorDate.getDate()-1);
+  return { date: dateKey(cursorDate), detail: `Previsión con ${DEFAULT_PRACTICE_HOURS} h por laborable · ${days} días estimados` };
+}
 function renderStats() {
   const practice=events.filter(e=>e.type==="practice").reduce((s,e)=>s+eventHours(e),0);
   const work=events.filter(e=>e.type==="work").reduce((s,e)=>s+eventHours(e),0);
   const days=new Set(events.map(e=>e.event_date));
   const personal=events.filter(e=>e.type==="personal").length;
-  const pct=Math.min(100,practice/500*100);
+  const leaves=events.filter(e=>e.type==="leave").length;
+  const pct=Math.min(100,practice/PRACTICE_TARGET*100);
   $("practice-hours").textContent=practice.toLocaleString("es-ES",{maximumFractionDigits:2});
   $("practice-progress").style.width=pct+"%";
   $("practice-percent").textContent=Math.round(pct)+"% completado";
-  $("practice-remaining").textContent=(Math.max(0,500-practice)).toLocaleString("es-ES",{maximumFractionDigits:2})+" h restantes";
+  $("practice-remaining").textContent=(Math.max(0,PRACTICE_TARGET-practice)).toLocaleString("es-ES",{maximumFractionDigits:2})+" h restantes";
   $("work-hours").textContent=work.toLocaleString("es-ES",{maximumFractionDigits:2});
   $("total-days").textContent=days.size;
-  $("personal-days").textContent=`${personal} ${personal===1?"jornada personal":"jornadas personales"}`;
+  $("personal-days").textContent=`${personal} personales · ${leaves} libranzas`;
+  const estimate=estimateFinishDate(practice);
+  $("finish-date").textContent=estimate.date?prettyDate(estimate.date,{day:"numeric",month:"long",year:"numeric"}):"¡Objetivo completado!";
+  $("finish-detail").textContent=estimate.detail;
 }
 function renderCalendar() {
   const root=$("calendar"); root.innerHTML="";
@@ -93,6 +121,7 @@ function renderCalendar() {
     if(d.getMonth()!==cursor.getMonth() && viewMode==="month") cell.classList.add("other-month");
     if(key===dateKey(new Date())) cell.classList.add("today");
     if(key===selectedDate) cell.classList.add("selected");
+    if(selectionMode && selectedDates.has(key)) cell.classList.add("multi-selected");
     const dayEvents=events.filter(e=>e.event_date===key);
     const top=document.createElement("div");top.className="day-top";
     const num=document.createElement("span");num.className="day-number";num.textContent=d.getDate();top.append(num);
@@ -100,7 +129,10 @@ function renderCalendar() {
     cell.append(top);
     dayEvents.slice(0,2).forEach(e=>{const pill=document.createElement("span");pill.className=`event-pill ${e.type}`;pill.textContent=e.title||typeNames[e.type];cell.append(pill);});
     if(dayEvents.length>2){const more=document.createElement("span");more.className="event-pill more";more.textContent=`+${dayEvents.length-2} más`;cell.append(more);}
-    cell.addEventListener("click",()=>{selectedDate=key;if(viewMode==="week")cursor=new Date(d.getFullYear(),d.getMonth(),1);render();});
+    cell.addEventListener("click",()=>{
+      if(selectionMode){ if(selectedDates.has(key)) selectedDates.delete(key); else selectedDates.add(key); renderCalendar(); updateBulkToolbar(); return; }
+      selectedDate=key;if(viewMode==="week")cursor=new Date(d.getFullYear(),d.getMonth(),1);render();
+    });
     root.append(cell);
   }
   $("month-title").textContent=viewMode==="month"?`${monthNames[cursor.getMonth()]} ${cursor.getFullYear()}`:`Semana del ${prettyDate(dateKey(start),{day:"numeric",month:"short"})}`;
@@ -128,28 +160,40 @@ function renderDayDetails() {
   root.querySelectorAll("[data-delete]").forEach(b=>b.addEventListener("click",()=>deleteEvent(b.dataset.delete)));
 }
 function render(){renderStats();renderCalendar();renderDayDetails();}
-function openModal(event=null) {
+function openModal(event=null, presetType=null) {
   $("event-form").reset();$("event-error").textContent="";
   $("event-id").value=event?.id||"";$("event-date").value=event?.event_date||selectedDate;
-  document.querySelector(`input[name="event-type"][value="${event?.type||"practice"}"]`).checked=true;
+  const initialType=event?.type||presetType||"practice";
+  document.querySelector(`input[name="event-type"][value="${initialType}"]`).checked=true;
   $("event-title").value=event?.title||"";$("event-start").value=event?.start_time||"";
-  $("event-end").value=event?.end_time||"";$("event-hours").value=event?.hours??"";
+  $("event-end").value=event?.end_time||"";$("event-hours").value=event?.hours??(initialType==="practice"?DEFAULT_PRACTICE_HOURS:"");
+  updateTypeFields();
   $("event-highlight").checked=!!event?.highlighted;$("event-notes").value=event?.notes||"";
   $("modal-title").textContent=event?"Editar registro":"Añadir al calendario";
   $("delete-event").classList.toggle("hidden",!event);
   $("event-modal").classList.remove("hidden");
 }
 function closeModal(){$("event-modal").classList.add("hidden");}
+function updateTypeFields(){
+  const type=document.querySelector('input[name="event-type"]:checked')?.value||"practice";
+  const isLeave=type==="leave";
+  $("event-start").disabled=isLeave;$("event-end").disabled=isLeave;$("event-hours").disabled=isLeave;
+  if(isLeave){$("event-start").value="";$("event-end").value="";$("event-hours").value="";}
+  else if(type==="practice"&&!$("event-hours").value) $("event-hours").value=DEFAULT_PRACTICE_HOURS;
+  $("leave-reason-wrap").querySelector("label").innerHTML=isLeave?'Motivo de libranza <span class="optional">opcional</span>':'Título <span class="optional">opcional</span>';
+  $("event-title").placeholder=isLeave?"Ej. Festivo, vacaciones, asuntos propios…":"Ej. Jornada en la empresa";
+}
 async function saveEvent(e) {
   e.preventDefault();$("event-error").textContent="";
   const id=$("event-id").value;
   const type=document.querySelector('input[name="event-type"]:checked').value;
   const hoursRaw=$("event-hours").value;
   const payload={user_id:user.id,event_date:$("event-date").value,type,title:$("event-title").value.trim(),
-    start_time:$("event-start").value||null,end_time:$("event-end").value||null,
-    hours:hoursRaw===""?null:Number(hoursRaw),highlighted:$("event-highlight").checked,notes:$("event-notes").value.trim()};
+    start_time:type==="leave"?null:($("event-start").value||null),end_time:type==="leave"?null:($("event-end").value||null),
+    hours:type==="leave"?null:(hoursRaw===""?null:Number(hoursRaw)),highlighted:$("event-highlight").checked,notes:$("event-notes").value.trim()};
   if(!payload.event_date){$("event-error").textContent="Selecciona una fecha.";return;}
   if(payload.hours!==null&&(payload.hours<0||payload.hours>24)){$("event-error").textContent="Las horas deben estar entre 0 y 24.";return;}
+  if(type==="practice"&&payload.hours===null) payload.hours=DEFAULT_PRACTICE_HOURS;
   if(payload.start_time&&payload.end_time&&!payload.hours){
     const [a,b]=[payload.start_time,payload.end_time].map(t=>t.split(":").reduce((h,m)=>h*60+Number(m),0));
     payload.hours=Math.round(((b-a+(b<a?1440:0))/60)*100)/100;
@@ -167,6 +211,29 @@ async function deleteEvent(id) {
   if(error){showToast("No se ha podido eliminar: "+error.message);return;}
   await loadEvents();closeModal();render();showToast("Registro eliminado");
 }
+
+function updateBulkToolbar(){
+  $("bulk-toolbar").classList.toggle("hidden",!selectionMode);
+  $("selection-toggle").classList.toggle("active",selectionMode);
+  $("selection-toggle").textContent=selectionMode?"Salir de selección":"Selección múltiple";
+  $("selected-count").textContent=selectedDates.size;
+}
+async function applyBulk(type){
+  const dates=[...selectedDates].sort();
+  if(!dates.length){showToast("Selecciona primero uno o varios días");return;}
+  const existing=new Set(events.map(e=>e.event_date));
+  const conflicts=dates.filter(d=>existing.has(d));
+  const fresh=dates.filter(d=>!existing.has(d));
+  if(!fresh.length){showToast("Todos los días seleccionados ya tienen registros; no se ha modificado nada");return;}
+  const label=typeNames[type].toLowerCase();
+  if(!confirm(`Se añadirán ${fresh.length} días como ${label}. ${conflicts.length?`${conflicts.length} días con registros existentes se conservarán sin cambios.`:""} ¿Continuar?`))return;
+  const payload=fresh.map(event_date=>({user_id:user.id,event_date,type,title:type==="leave"?"Libranza":"",start_time:null,end_time:null,hours:type==="practice"?DEFAULT_PRACTICE_HOURS:null,highlighted:false,notes:""}));
+  const {error}=await supabase.from("calendar_events").insert(payload);
+  if(error){showToast("No se pudieron guardar los días: "+error.message);return;}
+  selectedDate=fresh[0];selectedDates.clear();selectionMode=false;updateBulkToolbar();await loadEvents();render();
+  showToast(`${fresh.length} días añadidos como ${label}${conflicts.length?`; ${conflicts.length} conservados`:""}`);
+}
+
 async function exportBackup() {
   const data={exported_at:new Date().toISOString(),calendar_events:events};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
@@ -190,12 +257,24 @@ $("auth-form").addEventListener("submit",async e=>{
   user=result.data.user;await refresh();showApp();
 });
 document.querySelectorAll("[data-auth-tab]").forEach(b=>b.addEventListener("click",()=>setAuthMode(b.dataset.authTab)));
-$("add-event-top").addEventListener("click",()=>openModal());
+$("quick-practice").addEventListener("click",()=>openModal(null,"practice"));
+$("quick-work").addEventListener("click",()=>openModal(null,"work"));
+$("quick-leave").addEventListener("click",()=>openModal(null,"leave"));
 $("add-event-side").addEventListener("click",()=>openModal());
 $("close-modal").addEventListener("click",closeModal);$("cancel-modal").addEventListener("click",closeModal);
 $("event-modal").addEventListener("click",e=>{if(e.target===$("event-modal"))closeModal();});
 $("event-form").addEventListener("submit",saveEvent);
+document.querySelectorAll('input[name="event-type"]').forEach(r=>r.addEventListener("change",updateTypeFields));
 $("delete-event").addEventListener("click",()=>deleteEvent($("event-id").value));
+$("selection-toggle").addEventListener("click",()=>{selectionMode=!selectionMode;if(!selectionMode)selectedDates.clear();updateBulkToolbar();renderCalendar();});
+$("clear-selection").addEventListener("click",()=>{selectedDates.clear();selectionMode=false;updateBulkToolbar();renderCalendar();});
+$("select-weekdays").addEventListener("click",()=>{
+  selectedDates.clear();
+  const year=cursor.getFullYear(),month=cursor.getMonth(),last=new Date(year,month+1,0).getDate();
+  for(let day=1;day<=last;day++){const d=new Date(year,month,day);if(d.getDay()!==0&&d.getDay()!==6)selectedDates.add(dateKey(d));}
+  updateBulkToolbar();renderCalendar();
+});
+document.querySelectorAll("[data-bulk-type]").forEach(b=>b.addEventListener("click",()=>applyBulk(b.dataset.bulkType)));
 $("prev-month").addEventListener("click",()=>{const d=viewMode==="month"?new Date(cursor.getFullYear(),cursor.getMonth()-1,1):parseDate(selectedDate);if(viewMode==="week")d.setDate(d.getDate()-7);cursor=new Date(d.getFullYear(),d.getMonth(),1);if(viewMode==="week")selectedDate=dateKey(d);render();});
 $("next-month").addEventListener("click",()=>{const d=viewMode==="month"?new Date(cursor.getFullYear(),cursor.getMonth()+1,1):parseDate(selectedDate);if(viewMode==="week")d.setDate(d.getDate()+7);cursor=new Date(d.getFullYear(),d.getMonth(),1);if(viewMode==="week")selectedDate=dateKey(d);render();});
 $("today-button").addEventListener("click",()=>{const now=new Date();cursor=new Date(now.getFullYear(),now.getMonth(),1);selectedDate=dateKey(now);render();});
