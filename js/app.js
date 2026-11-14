@@ -19,8 +19,6 @@ let cursor = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 let viewMode = "month";
 let authMode = "login";
 let toastTimer;
-let selectionMode = false;
-
 const selectedDates = new Set();
 
 const PRACTICE_TARGET = 500;
@@ -71,7 +69,15 @@ function addDraggedDate(date) {
 function startCalendarDrag(e) {
   const cell = e.target.closest("#calendar .day-cell");
 
-  if (!cell || e.button !== 0) return;
+  if (!cell || e.button !== 0) {
+    // Fuera de las casillas se limpia la selección, excepto al usar acciones en bloque.
+    if (!e.target.closest("#bulk-toolbar")) {
+      selectedDates.clear();
+      updateBulkToolbar();
+      renderCalendar();
+    }
+    return;
+  }
 
   dragActive = true;
   dragMoved = false;
@@ -82,20 +88,14 @@ function moveCalendarDrag(e) {
   if (!dragActive || !(e.buttons & 1)) return;
 
   const cell = getCalendarCellFromPoint(e.clientX, e.clientY);
-
   if (!cell) return;
 
   const currentDate = cell.dataset.date;
-
   if (currentDate === dragStartDate && !dragMoved) return;
 
   if (!dragMoved) {
     dragMoved = true;
-    selectionMode = true;
-
-    // Una nueva selección por arrastre sustituye la anterior.
     selectedDates.clear();
-
     addDraggedDate(dragStartDate);
   }
 
@@ -108,16 +108,15 @@ function finishCalendarDrag() {
   dragActive = false;
 
   if (dragMoved) {
-    selectionMode = true;
     suppressCalendarClick = true;
-
     updateBulkToolbar();
-
-    // El navegador genera el click después del pointerup.
-    // Si no llega a generarlo, liberamos igualmente el bloqueo.
     setTimeout(() => {
       suppressCalendarClick = false;
     }, 0);
+  } else {
+    // Un clic simple no deja una selección múltiple anterior.
+    selectedDates.clear();
+    updateBulkToolbar();
   }
 
   dragStartDate = null;
@@ -415,14 +414,6 @@ function createDayCell(date, key, showOtherMonth = true, mini = false) {
   cell.addEventListener("click", () => {
     if (suppressCalendarClick) {
       suppressCalendarClick = false;
-      return;
-    }
-
-    if (selectionMode) {
-      if (selectedDates.has(key)) selectedDates.delete(key);
-      else selectedDates.add(key);
-      renderCalendar();
-      updateBulkToolbar();
       return;
     }
 
@@ -739,14 +730,7 @@ async function deleteEvent(id) {
 // --------------------------------------------------
 
 function updateBulkToolbar() {
-  $("bulk-toolbar").classList.toggle("hidden", !selectionMode);
-
-  $("selection-toggle").classList.toggle("active", selectionMode);
-
-  $("selection-toggle").textContent = selectionMode
-    ? "Salir de selección"
-    : "Selección múltiple";
-
+  $("bulk-toolbar").classList.toggle("hidden", selectedDates.size === 0);
   $("selected-count").textContent = selectedDates.size;
 }
 
@@ -804,7 +788,6 @@ async function applyBulk(type) {
   selectedDate = fresh[0];
 
   selectedDates.clear();
-  selectionMode = false;
 
   updateBulkToolbar();
 
@@ -932,20 +915,8 @@ $("delete-event").addEventListener("click", () => {
   deleteEvent($("event-id").value);
 });
 
-$("selection-toggle").addEventListener("click", () => {
-  selectionMode = !selectionMode;
-
-  if (!selectionMode) {
-    selectedDates.clear();
-  }
-
-  updateBulkToolbar();
-  renderCalendar();
-});
-
 $("clear-selection").addEventListener("click", () => {
   selectedDates.clear();
-  selectionMode = false;
 
   updateBulkToolbar();
   renderCalendar();
@@ -965,8 +936,6 @@ $("select-weekdays").addEventListener("click", () => {
       selectedDates.add(dateKey(d));
     }
   }
-
-  selectionMode = true;
 
   updateBulkToolbar();
   renderCalendar();
