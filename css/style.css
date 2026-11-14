@@ -353,3 +353,26 @@ h1,h2,h3,p{margin-top:0}h1{font:800 32px Manrope,sans-serif;letter-spacing:-1.4p
   color: #b94f49;
 }
 .bulk-toolbar .bulk-delete:hover { background: #ffe6e2; }
+
+ 
+/* En móvil, la barra solo aparece con una selección y permanece accesible al desplazarse. */
+@media (max-width: 720px) {
+  #bulk-toolbar { display: none !important; }
+  #app-view.mobile-actions-active #bulk-toolbar {
+    display: flex !important;
+    position: fixed;
+    z-index: 15;
+    left: 10px;
+    right: 10px;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    max-height: 42vh;
+    overflow-y: auto;
+    margin: 0;
+    padding: 9px;
+    background: #fff;
+    box-shadow: 0 8px 30px rgba(31, 42, 68, .2);
+  }
+  body:has(#app-view.mobile-actions-active) .app-shell { padding-bottom: 150px; }
+  #bulk-toolbar > span { flex: 0 0 100%; }
+  #bulk-toolbar button { flex: 1 1 auto; }
+}
