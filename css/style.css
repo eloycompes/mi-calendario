@@ -345,3 +345,11 @@ h1,h2,h3,p{margin-top:0}h1{font:800 32px Manrope,sans-serif;letter-spacing:-1.4p
     padding: 7px 24px 7px 9px;
   }
 }
+
+
+.bulk-toolbar .bulk-delete {
+  border: 1px solid #f2d4d1;
+  background: #fff1ef;
+  color: #b94f49;
+}
+.bulk-toolbar .bulk-delete:hover { background: #ffe6e2; }
