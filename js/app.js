@@ -369,7 +369,7 @@ function createDayCell(date, key, showOtherMonth = true, mini = false) {
     cell.classList.add("other-month");
   }
   if (key === dateKey(new Date())) cell.classList.add("today");
-  if (key === selectedDate) cell.classList.add("selected");
+  if (key === selectedDate && selectedDates.size === 0) cell.classList.add("selected");
   if (selectedDates.has(key)) cell.classList.add("multi-selected");
 
   const dayEvents = events.filter(e => e.event_date === key);
