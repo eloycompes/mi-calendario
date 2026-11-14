@@ -391,3 +391,30 @@ h1,h2,h3,p{margin-top:0}h1{font:800 32px Manrope,sans-serif;letter-spacing:-1.4p
   color: #3975d7;
   border-color: #b9cdf5;
 }
+
+
+/* Flechas integradas en la navegación superior del calendario. */
+.calendar-stage { margin: 0; }
+.period-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.period-nav button {
+  min-width: 31px;
+  min-height: 32px;
+  padding: 3px 8px;
+  font-size: 19px;
+  line-height: 1;
+}
+@media (max-width: 720px) {
+  .calendar-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .period-nav button {
+    min-width: 29px;
+    min-height: 31px;
+    padding: 3px 6px;
+  }
+}
