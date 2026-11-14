@@ -15,6 +15,7 @@ let user = null;
 let events = [];
 let selectedDate = dateKey(new Date());
 let cursor = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+let weekCursor = new Date();
 
 let viewMode = "year";
 let authMode = "login";
@@ -444,6 +445,7 @@ function createDayCell(date, key, showOtherMonth = true, mini = false) {
     }
 
     selectedDate = key;
+    weekCursor = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     cursor = new Date(date.getFullYear(), date.getMonth(), 1);
     render();
   });
@@ -984,8 +986,9 @@ $("prev-month").addEventListener("click", () => {
   } else if (viewMode === "month") {
     cursor = new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1);
   } else {
-    const d = parseDate(selectedDate);
+    const d = new Date(weekCursor);
     d.setDate(d.getDate() - 7);
+    weekCursor = new Date(d);
     selectedDate = dateKey(d);
     cursor = new Date(d.getFullYear(), d.getMonth(), 1);
   }
@@ -998,8 +1001,9 @@ $("next-month").addEventListener("click", () => {
   } else if (viewMode === "month") {
     cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
   } else {
-    const d = parseDate(selectedDate);
+    const d = new Date(weekCursor);
     d.setDate(d.getDate() + 7);
+    weekCursor = new Date(d);
     selectedDate = dateKey(d);
     cursor = new Date(d.getFullYear(), d.getMonth(), 1);
   }
@@ -1013,6 +1017,7 @@ $("today-button").addEventListener("click", () => {
 
   cursor = new Date(now.getFullYear(), now.getMonth(), 1);
   selectedDate = dateKey(now);
+  weekCursor = new Date(now);
 
   render();
 });
@@ -1021,8 +1026,12 @@ $("view-select").addEventListener("change", e => {
   viewMode = e.target.value;
   if (viewMode === "year") {
     cursor = new Date(cursor.getFullYear(), 0, 1);
-  } else if (viewMode === "week" && !selectedDate) {
-    selectedDate = dateKey(new Date());
+  } else if (viewMode === "week") {
+    if (selectedDate) weekCursor = parseDate(selectedDate);
+    else {
+      weekCursor = new Date();
+      selectedDate = dateKey(weekCursor);
+    }
   }
   renderCalendar();
 });
