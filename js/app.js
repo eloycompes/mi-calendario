@@ -34,6 +34,17 @@ const typeNames = {
   leave: "Libranza"
 };
 
+function isStandaloneNote(event) {
+  return event.type === "personal"
+    && event.title === "Nota del día"
+    && !event.start_time
+    && !event.end_time
+    && (event.hours === null || event.hours === undefined || event.hours === "")
+    && !event.highlighted
+    && !!event.notes;
+}
+
+
 const monthNames = [
   "enero", "febrero", "marzo", "abril", "mayo", "junio",
   "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
@@ -414,7 +425,7 @@ function createDayCell(date, key, showOtherMonth = true, mini = false) {
   if (key === selectedDate && selectedDates.size === 0) cell.classList.add("selected");
   if (selectedDates.has(key)) cell.classList.add("multi-selected");
 
-  const dayEvents = events.filter(e => e.event_date === key);
+  const dayEvents = events.filter(e => e.event_date === key && !isStandaloneNote(e));
   const top = document.createElement("div");
   top.className = "day-top";
 
@@ -556,20 +567,22 @@ function renderDayDetails() {
     prettyDate(selectedDate, { weekday: "short", day: "numeric", month: "long" });
 
   const dayEvents = events.filter(e => e.event_date === selectedDate);
+  const dayActivities = dayEvents.filter(e => !isStandaloneNote(e));
+  const notes = dayEvents.filter(e => e.notes?.trim());
 
-  if (!dayEvents.length) {
+  if (!dayActivities.length && !notes.length) {
     root.innerHTML = `
       <div class="empty-state">
         <div class="empty-illustration">✳</div>
         <strong>Día sin jornadas</strong>
-        <p>Aún no has añadido nada para esta fecha. Puedes registrar prácticas, trabajo o una nota personal.</p>
+        <p>Aún no has añadido nada para esta fecha. Puedes registrar una jornada o añadir una nota.</p>
       </div>
     `;
 
     return;
   }
 
-  dayEvents.forEach(e => {
+  dayActivities.forEach(e => {
     const div = document.createElement("article");
 
     div.className = "detail-item";
@@ -596,6 +609,29 @@ function renderDayDetails() {
     `;
 
     root.append(div);
+  });
+
+  notes.forEach(event => {
+    const note = document.createElement("article");
+    note.className = "agenda-note";
+    note.innerHTML = `
+      <div class="agenda-note-heading">
+        <strong>Notas</strong>
+        <span class="detail-actions">
+          <button type="button" data-note-edit="${event.id}" title="Editar nota">Editar</button>
+          <button type="button" data-note-delete="${event.id}" title="Eliminar nota">Eliminar</button>
+        </span>
+      </div>
+      <p class="detail-notes">${escapeHTML(event.notes)}</p>
+    `;
+    root.append(note);
+  });
+
+  root.querySelectorAll("[data-note-edit]").forEach(button => {
+    button.addEventListener("click", () => openNoteModal(button.dataset.noteEdit));
+  });
+  root.querySelectorAll("[data-note-delete]").forEach(button => {
+    button.addEventListener("click", () => deleteNote(button.dataset.noteDelete));
   });
 
   root.querySelectorAll("[data-edit]").forEach(b => {
@@ -639,6 +675,25 @@ function openNoteModal() {
   $("note-error").textContent = "";
   $("note-modal").classList.remove("hidden");
   $("note-text").focus();
+}
+
+async function deleteNote(eventId) {
+  const event = events.find(item => item.id === eventId);
+  if (!event?.notes) return;
+  if (!confirm("¿Quieres eliminar esta nota?")) return;
+
+  const result = isStandaloneNote(event)
+    ? await supabase.from("calendar_events").delete().eq("id", eventId).eq("user_id", user.id)
+    : await supabase.from("calendar_events").update({ notes: "" }).eq("id", eventId).eq("user_id", user.id);
+
+  if (result.error) {
+    showToast("No se pudo eliminar la nota: " + result.error.message);
+    return;
+  }
+
+  await loadEvents();
+  render();
+  showToast("Nota eliminada");
 }
 
 function closeNoteModal() {
@@ -862,7 +917,7 @@ async function deleteSelectedDays() {
     return;
   }
 
-  const matchingEvents = events.filter(event => dates.includes(event.event_date));
+  const matchingEvents = events.filter(event => dates.includes(event.event_date) && !isStandaloneNote(event));
   if (!matchingEvents.length) {
     showToast("Los días seleccionados no tienen jornadas que eliminar");
     return;
@@ -876,7 +931,7 @@ async function deleteSelectedDays() {
   const { error } = await supabase
     .from("calendar_events")
     .delete()
-    .in("event_date", dates)
+    .in("id", matchingEvents.map(event => event.id))
     .eq("user_id", user.id);
 
   if (error) {
@@ -912,7 +967,10 @@ async function applyBulk(type) {
     return;
   }
 
-  const existing = new Set(events.map(e => e.event_date));
+  const noteOnlyByDate = new Map(
+    events.filter(isStandaloneNote).map(event => [event.event_date, event])
+  );
+  const existing = new Set(events.filter(event => !isStandaloneNote(event)).map(event => event.event_date));
 
   const conflicts = dates.filter(d => existing.has(d));
   const fresh = dates.filter(d => !existing.has(d));
@@ -934,7 +992,28 @@ async function applyBulk(type) {
     return;
   }
 
-  const payload = fresh.map(event_date => ({
+  const noteOnlyDates = fresh.filter(date => noteOnlyByDate.has(date));
+  for (const event_date of noteOnlyDates) {
+    const noteEvent = noteOnlyByDate.get(event_date);
+    const { error } = await supabase
+      .from("calendar_events")
+      .update({
+        type,
+        title: type === "leave" ? "Libranza" : "",
+        start_time: null,
+        end_time: null,
+        hours: type === "practice" ? DEFAULT_PRACTICE_HOURS : null,
+        highlighted: false
+      })
+      .eq("id", noteEvent.id)
+      .eq("user_id", user.id);
+    if (error) {
+      showToast("No se pudieron guardar los días: " + error.message);
+      return;
+    }
+  }
+
+  const payload = fresh.filter(date => !noteOnlyByDate.has(date)).map(event_date => ({
     user_id: user.id,
     event_date,
     type,
@@ -946,13 +1025,15 @@ async function applyBulk(type) {
     notes: ""
   }));
 
-  const { error } = await supabase
-    .from("calendar_events")
-    .insert(payload);
+  if (payload.length) {
+    const { error } = await supabase
+      .from("calendar_events")
+      .insert(payload);
 
-  if (error) {
-    showToast("No se pudieron guardar los días: " + error.message);
-    return;
+    if (error) {
+      showToast("No se pudieron guardar los días: " + error.message);
+      return;
+    }
   }
 
   selectedDate = fresh[0];
