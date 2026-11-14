@@ -15,6 +15,7 @@ let user = null;
 let events = [];
 let selectedDate = dateKey(new Date());
 let bulkSelectionActive = false;
+let multiSelectMode = false;
 let cursor = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 let weekCursor = new Date();
 
@@ -70,6 +71,8 @@ function addDraggedDate(date) {
 
 function startCalendarDrag(e) {
   const cell = e.target.closest("#calendar .day-cell");
+
+  if (cell && !multiSelectMode) return;
 
   if (!cell || e.button !== 0) {
     // Los gestos de desplazamiento móvil no deben borrar la selección.
@@ -457,6 +460,7 @@ function createDayCell(date, key, showOtherMonth = true, mini = false) {
     }
 
     selectedDate = key;
+    if (!multiSelectMode) selectedDates.clear();
     selectedDates.add(key);
     bulkSelectionActive = true;
     weekCursor = new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -782,7 +786,7 @@ async function deleteEvent(id) {
 
 
 async function deleteSelectedDays() {
-  const dates = (selectedDates.size ? [...selectedDates] : selectedDate ? [selectedDate] : []).sort();
+  const dates = [...selectedDates].sort();
 
   if (!dates.length) {
     showToast("Selecciona uno o varios días en el calendario");
@@ -823,13 +827,16 @@ async function deleteSelectedDays() {
 // --------------------------------------------------
 
 function updateBulkToolbar() {
-  const count = selectedDates.size || (selectedDate ? 1 : 0);
-  $("selected-count").textContent = count;
+  $("selected-count").textContent = selectedDates.size;
   $("app-view").classList.toggle("mobile-actions-active", bulkSelectionActive);
+  const toggle = $("multi-select-toggle");
+  toggle.classList.toggle("active", multiSelectMode);
+  toggle.setAttribute("aria-pressed", String(multiSelectMode));
+  toggle.title = multiSelectMode ? "Desactivar selección múltiple" : "Activar selección múltiple";
 }
 
 async function applyBulk(type) {
-  const dates = (selectedDates.size ? [...selectedDates] : selectedDate ? [selectedDate] : []).sort();
+  const dates = [...selectedDates].sort();
 
   if (!dates.length) {
     showToast("Selecciona uno o varios días en el calendario");
@@ -1007,6 +1014,7 @@ $("delete-event").addEventListener("click", () => {
 $("delete-selected-days").addEventListener("click", deleteSelectedDays);
 
 $("select-weekdays").addEventListener("click", () => {
+  multiSelectMode = true;
   bulkSelectionActive = true;
 
   const year = cursor.getFullYear();
@@ -1066,6 +1074,7 @@ $("today-button").addEventListener("click", () => {
 
   cursor = new Date(now.getFullYear(), now.getMonth(), 1);
   selectedDate = dateKey(now);
+  if (!multiSelectMode) selectedDates.clear();
   selectedDates.add(selectedDate);
   weekCursor = new Date(now);
   bulkSelectionActive = true;
@@ -1076,6 +1085,18 @@ $("today-button").addEventListener("click", () => {
     document.querySelector(`#calendar .mini-month[data-year-month="${monthKey}"]`)
       ?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
+});
+
+$("multi-select-toggle").addEventListener("click", () => {
+  multiSelectMode = !multiSelectMode;
+
+  if (!multiSelectMode && selectedDates.size > 1) {
+    selectedDates.clear();
+    if (selectedDate) selectedDates.add(selectedDate);
+  }
+
+  updateBulkToolbar();
+  renderCalendar();
 });
 
 $("view-select").addEventListener("change", e => {
