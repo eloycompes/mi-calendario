@@ -61,7 +61,11 @@
           <h1>Tu calendario<span class="period-dot">.</span></h1>
           <p class="muted">Planifica tus días y lleva el control de tus horas.</p>
         </div>
-        <button id="add-event-top" class="primary-button"><span class="plus">＋</span> Añadir jornada</button>
+        <div class="quick-actions">
+          <button id="quick-practice" class="quick-action practice-action"><span>＋</span> Prácticas</button>
+          <button id="quick-work" class="quick-action work-action"><span>＋</span> Trabajo</button>
+          <button id="quick-leave" class="quick-action leave-action"><span>＋</span> Libranza</button>
+        </div>
       </section>
 
       <section class="stats-grid">
@@ -69,7 +73,7 @@
           <div class="stat-head"><span>Prácticas realizadas</span><span class="stat-icon">✳</span></div>
           <div class="stat-number"><strong id="practice-hours">0</strong><small> / 500 h</small></div>
           <div class="progress-track"><div id="practice-progress" class="progress-fill"></div></div>
-          <div class="stat-foot"><span id="practice-percent">0% completado</span><span id="practice-remaining">500 h restantes</span></div>
+          <div class="stat-foot"><span id="practice-percent">0% completado</span><span id="practice-remaining">500 h restantes</span></div><div class="finish-estimate"><span>◷</span><span><b>Finalización estimada</b><strong id="finish-date">Calculando…</strong></span><small id="finish-detail">A 6 h por día laborable</small></div>
         </article>
         <article class="stat-card stat-work">
           <div class="stat-head"><span>Horas de trabajo</span><span class="stat-icon">↗</span></div>
@@ -91,7 +95,7 @@
               <span id="month-count" class="month-count"></span>
             </div>
             <div class="calendar-actions">
-              <button id="today-button" class="subtle-button">Hoy</button>
+              <button id="selection-toggle" class="subtle-button">Selección múltiple</button><button id="today-button" class="subtle-button">Hoy</button>
               <div class="month-nav">
                 <button id="prev-month" aria-label="Mes anterior">‹</button>
                 <button id="next-month" aria-label="Mes siguiente">›</button>
@@ -102,10 +106,18 @@
               </select>
             </div>
           </div>
+          <div id="bulk-toolbar" class="bulk-toolbar hidden">
+            <span><b id="selected-count">0</b> días seleccionados</span>
+            <button data-bulk-type="practice" class="bulk-practice">Marcar prácticas</button>
+            <button data-bulk-type="work" class="bulk-work">Marcar trabajo</button>
+            <button data-bulk-type="leave" class="bulk-leave">Marcar libranza</button>
+            <button id="select-weekdays" class="bulk-neutral">Laborables del mes</button>
+            <button id="clear-selection" class="bulk-neutral">Cancelar</button>
+          </div>
           <div class="legend">
             <span><i class="legend-dot practice"></i> Prácticas</span>
             <span><i class="legend-dot work"></i> Trabajo</span>
-            <span><i class="legend-dot personal"></i> Personal</span>
+            <span><i class="legend-dot personal"></i> Personal</span><span><i class="legend-dot leave"></i> Libranza</span>
             <span><i class="legend-dot special"></i> Día destacado</span>
           </div>
           <div id="calendar" class="calendar-grid" aria-label="Calendario"></div>
@@ -143,8 +155,9 @@
           <label class="type-option"><input type="radio" name="event-type" value="practice" checked><span class="type-chip practice-chip">Prácticas</span></label>
           <label class="type-option"><input type="radio" name="event-type" value="work"><span class="type-chip work-chip">Trabajo</span></label>
           <label class="type-option"><input type="radio" name="event-type" value="personal"><span class="type-chip personal-chip">Personal</span></label>
+          <label class="type-option"><input type="radio" name="event-type" value="leave"><span class="type-chip leave-chip">Libranza</span></label>
         </div></div>
-        <div class="field full-field"><label for="event-title">Título <span class="optional">opcional</span></label><input id="event-title" type="text" maxlength="80" placeholder="Ej. Jornada en la empresa"></div>
+        <div class="field full-field" id="leave-reason-wrap"><label for="event-title">Motivo de libranza / título <span class="optional">opcional</span></label><input id="event-title" type="text" maxlength="80" placeholder="Ej. Jornada en la empresa"></div>
         <div class="field"><label for="event-start">Hora de inicio</label><input id="event-start" type="time"></div>
         <div class="field"><label for="event-end">Hora de fin</label><input id="event-end" type="time"></div>
         <div class="field"><label for="event-hours">Horas computables</label><input id="event-hours" type="number" min="0" max="24" step="0.25" placeholder="Ej. 6"></div>
