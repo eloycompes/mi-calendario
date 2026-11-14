@@ -1007,8 +1007,7 @@ $("delete-event").addEventListener("click", () => {
 $("delete-selected-days").addEventListener("click", deleteSelectedDays);
 
 $("select-weekdays").addEventListener("click", () => {
-  selectedDates.clear();
-  selectedDate = null;
+  bulkSelectionActive = true;
 
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
