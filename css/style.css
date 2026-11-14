@@ -270,3 +270,14 @@ h1,h2,h3,p{margin-top:0}h1{font:800 32px Manrope,sans-serif;letter-spacing:-1.4p
   color: #fff !important;
   border-radius: 50% !important;
 }
+
+
+/* Reserva permanente del espacio de acciones múltiples para evitar saltos del calendario. */
+.bulk-toolbar {
+  min-height: 54px;
+  box-sizing: border-box;
+}
+.bulk-toolbar.is-empty {
+  visibility: hidden;
+  pointer-events: none;
+}
