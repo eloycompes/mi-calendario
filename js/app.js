@@ -593,6 +593,7 @@ function renderDayDetails() {
 }
 
 function render() {
+  updateBulkToolbar();
   renderStats();
   renderCalendar();
   renderDayDetails();
@@ -764,16 +765,56 @@ async function deleteEvent(id) {
   showToast("Registro eliminado");
 }
 
+
+async function deleteSelectedDays() {
+  const dates = (selectedDates.size ? [...selectedDates] : selectedDate ? [selectedDate] : []).sort();
+
+  if (!dates.length) {
+    showToast("Selecciona uno o varios días en el calendario");
+    return;
+  }
+
+  const matchingEvents = events.filter(event => dates.includes(event.event_date));
+  if (!matchingEvents.length) {
+    showToast("Los días seleccionados no tienen jornadas que eliminar");
+    return;
+  }
+
+  const dateLabel = dates.length === 1 ? "el día seleccionado" : "los días seleccionados";
+  if (!confirm(`Se eliminarán ${matchingEvents.length} jornadas de ${dateLabel}. Esta acción no se puede deshacer. ¿Continuar?`)) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from("calendar_events")
+    .delete()
+    .in("event_date", dates)
+    .eq("user_id", user.id);
+
+  if (error) {
+    showToast("No se pudieron eliminar las jornadas: " + error.message);
+    return;
+  }
+
+  selectedDates.clear();
+  selectedDate = null;
+  updateBulkToolbar();
+  await loadEvents();
+  render();
+  showToast(`${matchingEvents.length} jornadas eliminadas`);
+}
+
 // --------------------------------------------------
 // SELECCIÓN MÚLTIPLE Y ACCIONES EN BLOQUE
 // --------------------------------------------------
 
 function updateBulkToolbar() {
-  $("selected-count").textContent = selectedDates.size;
+  const count = selectedDates.size || (selectedDate ? 1 : 0);
+  $("selected-count").textContent = count;
 }
 
 async function applyBulk(type) {
-  const dates = [...selectedDates].sort();
+  const dates = (selectedDates.size ? [...selectedDates] : selectedDate ? [selectedDate] : []).sort();
 
   if (!dates.length) {
     showToast("Selecciona uno o varios días en el calendario");
@@ -952,13 +993,18 @@ $("delete-event").addEventListener("click", () => {
 
 $("clear-selection").addEventListener("click", () => {
   selectedDates.clear();
+  selectedDate = null;
 
   updateBulkToolbar();
   renderCalendar();
+  renderDayDetails();
 });
+
+$("delete-selected-days").addEventListener("click", deleteSelectedDays);
 
 $("select-weekdays").addEventListener("click", () => {
   selectedDates.clear();
+  selectedDate = null;
 
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
