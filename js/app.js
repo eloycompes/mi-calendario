@@ -766,7 +766,6 @@ async function deleteEvent(id) {
 // --------------------------------------------------
 
 function updateBulkToolbar() {
-  $("bulk-toolbar").classList.toggle("is-empty", selectedDates.size === 0);
   $("selected-count").textContent = selectedDates.size;
 }
 
@@ -774,7 +773,7 @@ async function applyBulk(type) {
   const dates = [...selectedDates].sort();
 
   if (!dates.length) {
-    showToast("Selecciona primero uno o varios días");
+    showToast("Selecciona uno o varios días en el calendario");
     return;
   }
 
@@ -928,9 +927,6 @@ document.querySelectorAll("[data-auth-tab]").forEach(b => {
   b.addEventListener("click", () => setAuthMode(b.dataset.authTab));
 });
 
-$("quick-practice").addEventListener("click", () => openModal(null, "practice"));
-$("quick-work").addEventListener("click", () => openModal(null, "work"));
-$("quick-leave").addEventListener("click", () => openModal(null, "leave"));
 
 $("add-event-side").addEventListener("click", () => openModal());
 
