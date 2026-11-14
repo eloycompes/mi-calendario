@@ -281,3 +281,17 @@ h1,h2,h3,p{margin-top:0}h1{font:800 32px Manrope,sans-serif;letter-spacing:-1.4p
   visibility: hidden;
   pointer-events: none;
 }
+
+
+/* Diseño compacto: el calendario ocupa el espacio principal desde la parte superior. */
+.welcome-row { display: none !important; }
+.workspace { margin-top: 16px; }
+.calendar-panel { padding-top: 16px; }
+.bulk-toolbar {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  min-height: 54px;
+  margin: 0 0 12px;
+}
